@@ -1,0 +1,80 @@
+@php
+    /**
+     * Placed once in the main layout. Three producers feed the same store:
+     * this component reads whatever SessionDriver flashed (plain Laravel),
+     * notify.js listens for Livewire's `notify:push` browser event
+     * (LivewireDriver), and window.Notify.* can be called directly from any
+     * inline script with no backend round-trip at all.
+     */
+    $queue = session('notify.queue', []);
+
+    if (config('notify.session_bridge.enabled', true)) {
+        foreach (config('notify.session_bridge.keys', []) as $sessionKey => $variant) {
+            if (session()->has($sessionKey)) {
+                $queue[] = [
+                    'id' => (string) \Illuminate\Support\Str::uuid(),
+                    'type' => 'toast',
+                    'variant' => $variant,
+                    'title' => null,
+                    'message' => session($sessionKey),
+                    'icon' => null,
+                    'duration' => config("notify.duration.$variant"),
+                    'position' => config('notify.position', 'top-right'),
+                    'dismissible' => true,
+                    'persistent' => false,
+                    'group' => null,
+                    'actions' => [],
+                    'url' => null,
+                    'progress' => null,
+                    'meta' => [],
+                    'replace' => false,
+                ];
+            }
+        }
+    }
+
+    $showValidationAlert = config('notify.validation.enabled', true)
+        && $errors->any()
+        && ! request()->hasHeader('X-Livewire');
+
+    if ($showValidationAlert) {
+        $queue[] = [
+            'id' => (string) \Illuminate\Support\Str::uuid(),
+            'type' => 'alert',
+            'variant' => 'error',
+            'title' => config('notify.validation.message'),
+            'message' => null,
+            'icon' => null,
+            'duration' => null,
+            'position' => config('notify.position', 'top-right'),
+            'dismissible' => true,
+            'persistent' => true,
+            'group' => null,
+            'actions' => [],
+            'url' => null,
+            'progress' => null,
+            'meta' => ['errors' => $errors->all()],
+            'replace' => false,
+        ];
+    }
+@endphp
+
+<div id="notify-root" data-notify-position="{{ config('notify.position', 'top-right') }}"></div>
+
+<script>
+    window.__NOTIFY_CONFIG__ = @json([
+        'position' => config('notify.position', 'top-right'),
+        'maxVisible' => config('notify.max_visible', 4),
+        'dismissible' => config('notify.dismissible', true),
+        'animations' => config('notify.animations', true),
+    ]);
+    window.__NOTIFY_QUEUE__ = @json(array_values($queue));
+</script>
+
+@if (config('notify.assets.serve', true) && \Illuminate\Support\Facades\Route::has('notify.assets.css'))
+    <link rel="stylesheet" href="{{ route('notify.assets.css') }}">
+@endif
+
+@if (config('notify.assets.serve', true) && \Illuminate\Support\Facades\Route::has('notify.assets.js'))
+    <script defer src="{{ route('notify.assets.js') }}"></script>
+@endif
