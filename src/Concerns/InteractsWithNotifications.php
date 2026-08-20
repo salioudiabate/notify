@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Salioudiabate\Notify\Concerns;
 
 use Closure;
+use Salioudiabate\Notify\Builders\ConfirmBuilder;
 use Salioudiabate\Notify\Builders\ToastBuilder;
 use Salioudiabate\Notify\Facades\Notify;
 use Salioudiabate\Notify\NotifyManager;
@@ -47,6 +48,34 @@ trait InteractsWithNotifications
             ->forComponent($this)
             ->onConfirm($action, $params)
             ->send();
+    }
+
+    /**
+     * Same target-binding as notify()/confirm() above, but always returns the
+     * builder, unambiguously — for the static-analysis-friendly alternative
+     * to notify()'s "sends immediately unless $message is omitted" overload.
+     * Use this when you need to chain anything notify() itself can't reach,
+     * e.g. ->danger()/->action()/->group() before ->send().
+     */
+    public function notifyBuilder(): ToastBuilder
+    {
+        return Notify::toast()->forComponent($this);
+    }
+
+    /**
+     * confirm()'s builder-returning counterpart: confirm() above always sends
+     * right away, so it can't reach ->danger(), ->confirmColor()/->cancelColor(),
+     * ->confirmText()/->cancelText(), or a custom ->icon() — get the builder
+     * here instead, then finish with ->onConfirm(...)->send() yourself:
+     *
+     *   $this->confirmBuilder('Delete this?', 'This cannot be undone.')
+     *       ->danger()
+     *       ->onConfirm('delete', ['id' => $item->id])
+     *       ->send();
+     */
+    public function confirmBuilder(?string $title = null, ?string $message = null): ConfirmBuilder
+    {
+        return Notify::confirm($title, $message)->forComponent($this);
     }
 
     /**

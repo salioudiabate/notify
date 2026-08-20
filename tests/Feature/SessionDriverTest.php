@@ -23,3 +23,29 @@ it('clearGroup() queues a command the front-end store recognizes, not a regular 
         ['type' => 'command', 'command' => 'clearGroup', 'group' => 'users'],
     ]);
 });
+
+it('dismiss() queues a command targeting one specific notification id', function () {
+    app(SessionDriver::class)->dismiss('toast-42');
+
+    expect(session('notify.queue'))->toBe([
+        ['type' => 'command', 'command' => 'dismiss', 'id' => 'toast-42'],
+    ]);
+});
+
+it('clearAll() queues a command with no extra arguments', function () {
+    app(SessionDriver::class)->clearAll();
+
+    expect(session('notify.queue'))->toBe([
+        ['type' => 'command', 'command' => 'clearAll'],
+    ]);
+});
+
+it('Notify::dismiss()/clearAll() go through the same driver resolution as every other call', function () {
+    Notify::dismiss('toast-42');
+    Notify::clearAll();
+
+    expect(session('notify.queue'))->toBe([
+        ['type' => 'command', 'command' => 'dismiss', 'id' => 'toast-42'],
+        ['type' => 'command', 'command' => 'clearAll'],
+    ]);
+});

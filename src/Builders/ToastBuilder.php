@@ -7,7 +7,7 @@ namespace Salioudiabate\Notify\Builders;
 use Salioudiabate\Notify\Concerns\HasVariant;
 use Salioudiabate\Notify\Support\NotificationPayload;
 
-final class ToastBuilder extends NotificationBuilder
+class ToastBuilder extends NotificationBuilder
 {
     use HasVariant;
 
@@ -21,6 +21,7 @@ final class ToastBuilder extends NotificationBuilder
     {
         $this->variant = 'loading';
         $this->dismissible = false;
+        $this->persistent = true; // never auto-dismisses — the payload's own flag should say so, not just an absent duration
 
         return $this;
     }

@@ -17,4 +17,12 @@ interface NotificationDriver
     public function push(NotificationPayload $payload): void;
 
     public function clearGroup(string $group): void;
+
+    /** Remotely close one already-rendered notification by id — the PHP-side
+     *  counterpart of the front-end's Notify.dismiss(id). */
+    public function dismiss(string $id): void;
+
+    /** Remotely close every currently-rendered notification — the PHP-side
+     *  counterpart of the front-end's Notify.clear(). */
+    public function clearAll(): void;
 }

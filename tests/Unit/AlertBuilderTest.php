@@ -27,6 +27,18 @@ it('button() accepts a one-off color override, same as action()', function () {
     expect(lastQueuedPayload()['actions'][0]['color'])->toBe(['bg' => '#7c3aed']);
 });
 
+it('button() also accepts a target, unlike before — it no longer has to be dismiss-only', function () {
+    Notify::alert()->warning()->message('...')->button('Réessayer', null, 'clients.index')->send();
+
+    expect(lastQueuedPayload()['actions'][0])
+        ->label->toBe('Réessayer')
+        ->style->toBe('primary')
+        ->and(lastQueuedPayload()['actions'][0]['target'])->toBe([
+            'type' => 'url',
+            'url' => route('clients.index'),
+        ]);
+});
+
 it('combines button() with a regular action() for a persistent-banner-style pair', function () {
     Notify::alert()->info()->message('...')
         ->action('En savoir plus', 'https://example.com', 'link')

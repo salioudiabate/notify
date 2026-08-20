@@ -68,6 +68,16 @@ final class PendingNotification
         return redirect($url, $status);
     }
 
+    /** Closes this specific notification remotely — e.g. a loading toast that
+     *  turns out to need no further feedback at all, rather than a
+     *  success()/error() state. Targets the same component update() would. */
+    public function dismiss(): static
+    {
+        $this->manager->driverFor($this->component)->dismiss($this->id);
+
+        return $this;
+    }
+
     private function update(): UpdateBuilder
     {
         $builder = $this->manager->update($this->id);

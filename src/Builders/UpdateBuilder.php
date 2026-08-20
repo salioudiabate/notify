@@ -19,7 +19,7 @@ use Salioudiabate\Notify\Support\NotificationPayload;
  * an update is almost always "swap to this state with this message" in one
  * move, so that's the ergonomic default here.
  */
-final class UpdateBuilder extends NotificationBuilder
+class UpdateBuilder extends NotificationBuilder
 {
     private string $kind = 'toast';
 

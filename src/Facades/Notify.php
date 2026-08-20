@@ -25,9 +25,15 @@ use Salioudiabate\Notify\Support\PendingNotification;
  * @method static PendingNotification error(string $message, ?string $title = null)
  * @method static PendingNotification warning(string $message, ?string $title = null)
  * @method static PendingNotification info(string $message, ?string $title = null)
+ * @method static PendingNotification alertSuccess(string $message, ?string $title = null)
+ * @method static PendingNotification alertError(string $message, ?string $title = null)
+ * @method static PendingNotification alertWarning(string $message, ?string $title = null)
+ * @method static PendingNotification alertInfo(string $message, ?string $title = null)
  * @method static UpdateBuilder update(string $id)
  * @method static PendingNotification exception(\Throwable $e)
  * @method static void clearGroup(string $group)
+ * @method static void dismiss(string $id)
+ * @method static void clearAll()
  *
  * @see NotifyManager
  */

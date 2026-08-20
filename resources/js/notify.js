@@ -616,8 +616,11 @@
   // ------------------------------------------------------------ ingestion --
 
   function ingest(item) {
-    if (item.type === 'command' && item.command === 'clearGroup') {
-      clearGroup(item.group);
+    if (item.type === 'command') {
+      if (item.command === 'clearGroup') clearGroup(item.group);
+      else if (item.command === 'dismiss') dismiss(item.id);
+      else if (item.command === 'clearAll') clearAll();
+
       return;
     }
 
@@ -854,6 +857,8 @@
     function bindLivewire() {
       window.Livewire.on('notify:push', function (e) { ingest(e.notification); });
       window.Livewire.on('notify:clear-group', function (e) { clearGroup(e.group); });
+      window.Livewire.on('notify:dismiss', function (e) { dismiss(e.id); });
+      window.Livewire.on('notify:clear-all', function () { clearAll(); });
     }
 
     if (window.Livewire) {

@@ -30,7 +30,8 @@ it('loading() renders as a non-dismissible, indeterminate toast with no duration
     expect(lastQueuedPayload())
         ->variant->toBe('loading')
         ->dismissible->toBeFalse()
-        ->duration->toBeNull();
+        ->duration->toBeNull()
+        ->persistent->toBeTrue(); // the payload's own flag should say so, not just an absent duration
 });
 
 it('error toasts default to no auto-dismiss duration, per config', function () {

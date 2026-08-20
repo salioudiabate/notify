@@ -39,6 +39,32 @@ final class NotifyManager
         return new AlertBuilder($this);
     }
 
+    /**
+     * One-liner shorthands for the common "banner with this message" case —
+     * mirrors success()/error()/warning()/info() above, which do the same
+     * for toast(). Use alert() directly for anything more custom (a button(),
+     * a longer-lived group(), ...).
+     */
+    public function alertSuccess(string $message, ?string $title = null): PendingNotification
+    {
+        return $this->alert()->success()->title($title)->message($message)->send();
+    }
+
+    public function alertError(string $message, ?string $title = null): PendingNotification
+    {
+        return $this->alert()->error()->title($title)->message($message)->send();
+    }
+
+    public function alertWarning(string $message, ?string $title = null): PendingNotification
+    {
+        return $this->alert()->warning()->title($title)->message($message)->send();
+    }
+
+    public function alertInfo(string $message, ?string $title = null): PendingNotification
+    {
+        return $this->alert()->info()->title($title)->message($message)->send();
+    }
+
     public function confirm(?string $title = null, ?string $message = null, string|\Closure|null $onConfirm = null): ConfirmBuilder
     {
         $builder = (new ConfirmBuilder($this))->title($title)->message($message);
@@ -107,6 +133,20 @@ final class NotifyManager
     public function clearGroup(string $group): void
     {
         $this->resolveDriver()->clearGroup($group);
+    }
+
+    /** PHP-side counterpart of the front-end's Notify.dismiss(id) — closes an
+     *  already-rendered notification remotely, without a page reload when
+     *  called from a Livewire component. */
+    public function dismiss(string $id): void
+    {
+        $this->resolveDriver()->dismiss($id);
+    }
+
+    /** PHP-side counterpart of the front-end's Notify.clear(). */
+    public function clearAll(): void
+    {
+        $this->resolveDriver()->clearAll();
     }
 
     /**

@@ -35,4 +35,18 @@ final class SessionDriver implements NotificationDriver
         $queue[] = ['type' => 'command', 'command' => 'clearGroup', 'group' => $group];
         $this->session->flash('notify.queue', $queue);
     }
+
+    public function dismiss(string $id): void
+    {
+        $queue = $this->session->get('notify.queue', []);
+        $queue[] = ['type' => 'command', 'command' => 'dismiss', 'id' => $id];
+        $this->session->flash('notify.queue', $queue);
+    }
+
+    public function clearAll(): void
+    {
+        $queue = $this->session->get('notify.queue', []);
+        $queue[] = ['type' => 'command', 'command' => 'clearAll'];
+        $this->session->flash('notify.queue', $queue);
+    }
 }

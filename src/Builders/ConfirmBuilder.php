@@ -13,7 +13,7 @@ use Salioudiabate\Notify\Support\NotificationPayload;
  * Always renders exactly Cancel + one primary action, matching the design
  * system's dialog footer — free-form button counts belong to DialogBuilder.
  */
-final class ConfirmBuilder extends NotificationBuilder
+class ConfirmBuilder extends NotificationBuilder
 {
     private string $confirmText;
 

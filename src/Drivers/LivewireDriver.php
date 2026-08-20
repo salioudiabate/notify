@@ -30,4 +30,14 @@ final class LivewireDriver implements NotificationDriver
     {
         $this->component->dispatch('notify:clear-group', group: $group);
     }
+
+    public function dismiss(string $id): void
+    {
+        $this->component->dispatch('notify:dismiss', id: $id);
+    }
+
+    public function clearAll(): void
+    {
+        $this->component->dispatch('notify:clear-all');
+    }
 }

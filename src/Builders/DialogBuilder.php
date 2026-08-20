@@ -13,7 +13,7 @@ use Salioudiabate\Notify\Support\NotificationPayload;
  * celebratory layout (large centered icon/title/body, single full-width
  * button) used for a "Payment successful"-style dialog.
  */
-final class DialogBuilder extends NotificationBuilder
+class DialogBuilder extends NotificationBuilder
 {
     use HasVariant;
 

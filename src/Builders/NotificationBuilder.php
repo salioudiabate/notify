@@ -7,6 +7,7 @@ namespace Salioudiabate\Notify\Builders;
 use Closure;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
+use Illuminate\Support\Traits\Macroable;
 use Salioudiabate\Notify\NotifyManager;
 use Salioudiabate\Notify\Support\Action;
 use Salioudiabate\Notify\Support\CallbackAction;
@@ -18,9 +19,17 @@ use Salioudiabate\Notify\Support\PendingNotification;
  * add what makes them different (ToastBuilder's loading(), ConfirmBuilder's
  * onConfirm(), ...) — everything about title/message/actions/timing/target
  * resolution lives here once.
+ *
+ * Neither this class nor any concrete builder is `final`, and Macroable is
+ * available on all of them — "ultra-customizable" extends to the PHP API
+ * itself: subclass a builder to add your own fluent methods, or register one
+ * without subclassing at all via e.g. ToastBuilder::macro('forTenant', fn
+ * ($tenant) => $this->meta(['tenant' => $tenant->id])).
  */
 abstract class NotificationBuilder
 {
+    use Macroable;
+
     protected string $id;
 
     protected string $variant = 'neutral';

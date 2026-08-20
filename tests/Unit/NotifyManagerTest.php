@@ -53,3 +53,34 @@ it('update($id)->progress() reaches the front-end as a progress-type replace pay
         ->progress->toBe(80)
         ->replace->toBeTrue();
 });
+
+it('a PendingNotification can dismiss() the notification it refers to', function () {
+    $pending = Notify::loading('Traitement…');
+
+    $pending->dismiss();
+
+    expect(session('notify.queue'))->toHaveCount(2)
+        ->and(session('notify.queue')[1])->toBe([
+            'type' => 'command', 'command' => 'dismiss', 'id' => $pending->id(),
+        ]);
+});
+
+it('alertSuccess()/alertError()/alertWarning()/alertInfo() are one-liners for alert(), mirroring the toast shorthands', function () {
+    Notify::alertSuccess('Sauvegardé.', 'Fait');
+
+    expect(lastQueuedPayload())
+        ->type->toBe('alert')
+        ->variant->toBe('success')
+        ->title->toBe('Fait')
+        ->message->toBe('Sauvegardé.')
+        ->persistent->toBeTrue();
+
+    Notify::alertError('Erreur.');
+    expect(lastQueuedPayload())->type->toBe('alert')->variant->toBe('error');
+
+    Notify::alertWarning('Attention.');
+    expect(lastQueuedPayload())->type->toBe('alert')->variant->toBe('warning');
+
+    Notify::alertInfo('Info.');
+    expect(lastQueuedPayload())->type->toBe('alert')->variant->toBe('info');
+});

@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace Salioudiabate\Notify\Builders;
 
+use Salioudiabate\Notify\Concerns\HasVariant;
 use Salioudiabate\Notify\NotifyManager;
 
-final class ProgressBuilder extends NotificationBuilder
+class ProgressBuilder extends NotificationBuilder
 {
+    use HasVariant;
+
     public function __construct(NotifyManager $manager)
     {
         parent::__construct($manager);

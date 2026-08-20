@@ -131,6 +131,18 @@ class DeleteClientButton extends Component
 
 `InteractsWithNotifications` registers the component the moment it boots (`bootInteractsWithNotifications()` — a standard Livewire trait hook, nothing package-specific), so even a plain `Notify::success(...)` call made anywhere during that request — a service class, a job dispatched synchronously, not just `$this->notify()` — is upgraded to an instant push automatically for the rest of the request.
 
+`notify()`/`confirm()` above are one-liners that send right away — they can't reach `->danger()`, `->group()`, `->confirmColor()`, or anything else that needs chaining before `->send()`. For that, use their builder-returning counterparts instead, still bound to the same component:
+
+```php
+$this->notifyBuilder()->error()->title('Oups')->message('...')->group('errors')->send();
+
+$this->confirmBuilder('Supprimer définitivement ?', 'Cette action est irréversible.')
+    ->danger()
+    ->confirmColor('#dc2626')
+    ->onConfirm('delete', ['client' => $client->id])
+    ->send();
+```
+
 ### Pure client-side JS
 
 No backend call at all:
@@ -167,6 +179,14 @@ Notify::alert()->warning()->title('Attention')->message('...')->button('Compris'
 Notify::alert()->info()->title('Maintenance programmée')->message('...')
     ->action('En savoir plus', 'https://...', 'link')->button('Fermer')->show(); // persists until dismissed
 
+// one-liners for the common "banner with this message" case, mirroring
+// success()/error()/warning()/info() above for toast() — use alert() directly
+// for anything more custom (a button() with its own target, group(), ...)
+Notify::alertSuccess($message, $title = null);
+Notify::alertError($message, $title = null);
+Notify::alertWarning($message, $title = null);
+Notify::alertInfo($message, $title = null);
+
 Notify::confirm('Titre', 'Message')->danger()->confirmText('Supprimer')->onConfirm(...)->show();
 
 // dialog() is free-form (any number of action() buttons) — centered() switches
@@ -187,12 +207,26 @@ $pending->progress(80);
 
 Notify::update($id)->success('Terminé.')->send();
 Notify::clearGroup('users');
+Notify::dismiss($id);  // closes one already-rendered notification remotely
+Notify::clearAll();    // closes every currently-rendered notification remotely
 Notify::exception($e); // never leaks $e->getMessage() in production unless configured to
+
+$pending->dismiss(); // same as Notify::dismiss($pending->id()), targeting the right component automatically
 ```
 
-Shared fluent methods on every builder: `title()`, `message()`, `icon()`, `duration()`, `position()`, `dismissible()`, `persistent()`, `group()`, `id()`, `action($label, $target, $style)`, `url($url, $label)`, `template($name)`.
+Shared fluent methods on every builder: `title()`, `message()`, `icon()`, `duration()`, `position()`, `dismissible()`, `persistent()`, `group()`, `id()`, `action($label, $target, $style, $color)`, `url($url, $label, $color)`, `template($name)`.
 
 `position()` accepts `top-right` (default), `top-left`, `top-center`, `bottom-right`, `bottom-left`, `bottom-center`. `action()`'s `$target` resolves exactly like `onConfirm()` does (see [below](#confirmations--server-actions)) — a route name, a URL, a Livewire method name, or a `Closure` all work the same way on any toast/alert/dialog action, not just a confirmation's.
+
+**Extending a builder.** None of the builders are `final`, and all of them inherit Laravel's `Macroable` trait — add your own fluent methods either by subclassing, or without subclassing at all:
+
+```php
+ToastBuilder::macro('forTenant', function (Tenant $tenant) {
+    return $this->meta(['tenant' => $tenant->id]);
+});
+
+Notify::toast()->success()->message('...')->forTenant($tenant)->send();
+```
 
 ## Custom templates
 
