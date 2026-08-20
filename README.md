@@ -181,6 +181,12 @@ Notify::alert()->asWarning()->title('Attention')->message('...')->button('Compri
 Notify::alert()->asInfo()->title('Maintenance programmée')->message('...')
     ->action('En savoir plus', 'https://...', 'link')->button('Fermer')->show(); // persists until dismissed
 
+// button()'s label is all it needs for a plain dismiss button (above) — pass
+// a target too (any of action()'s: a route, a URL, a Livewire method, a
+// Closure) and/or a color for a real call to action instead:
+Notify::alert()->asInfo()->title('Nouveau message')->message('...')
+    ->button('Voir', null, 'messages.index')->show();
+
 // one-liners for the common "banner with this message" case, mirroring
 // success()/error()/warning()/info() above for toast() — use alert() directly
 // for anything more custom (a button() with its own target, group(), ...)
@@ -487,7 +493,7 @@ See `config/notify.php` for the full reference: default position/duration per va
 
 - Signed, single-use, time-boxed callback URLs for `onConfirm(Closure ...)` — see [above](#confirmations--server-actions).
 - `Notify::exception()` never surfaces `$e->getMessage()` outside `local`/`testing` environments unless you explicitly opt in via `config('notify.errors.local')`.
-- All rendered strings (title, message, labels) go through the front-end's own escaping — nothing is ever injected as raw HTML from a payload.
+- All rendered strings (title, message, labels) go through the front-end's own escaping — nothing user-supplied is ever injected as raw HTML. The one deliberate exception is `->icon()`: passing it markup (`->icon('<svg>...</svg>')`, see [Icons, text & button colors](#icons-text--button-colors)) inserts it verbatim, same as every built-in icon already does — treat it like any other trusted, developer-authored template string, never like `title()`/`message()`, which are meant for arbitrary content and always escaped.
 
 ## Roadmap
 
