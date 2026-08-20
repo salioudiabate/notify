@@ -55,7 +55,7 @@ it('notifyBuilder() always returns the builder, unambiguously, unlike notify()',
     expect($builder)->toBeInstanceOf(ToastBuilder::class)
         ->and($component->dispatched)->toBeEmpty();
 
-    $builder->error()->message('Oups')->send();
+    $builder->asError()->message('Oups')->send();
 
     expect($component->dispatched)->toHaveCount(1);
 });

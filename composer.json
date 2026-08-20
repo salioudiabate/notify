@@ -28,6 +28,7 @@
         "spatie/laravel-package-tools": "^1.16"
     },
     "require-dev": {
+        "illuminate/broadcasting": "^11.0|^12.0|^13.0",
         "larastan/larastan": "^3.0",
         "laravel/pint": "^1.18",
         "livewire/livewire": "^3.0|^4.0",
@@ -37,7 +38,8 @@
         "pestphp/pest-plugin-livewire": "^3.0|^4.0"
     },
     "suggest": {
-        "livewire/livewire": "Enables the InteractsWithNotifications trait and no-reload, real-time notifications. Notify works fully without it — this only upgrades the experience. Supports ^3.0 and ^4.0: the integration uses only Livewire's public dispatch()/on() API, never internals, so both versions behave identically."
+        "livewire/livewire": "Enables the InteractsWithNotifications trait and no-reload, real-time notifications. Notify works fully without it — this only upgrades the experience. Supports ^3.0 and ^4.0: the integration uses only Livewire's public dispatch()/on() API, never internals, so both versions behave identically.",
+        "illuminate/broadcasting + a broadcasting driver (Reverb/Pusher/Ably) + Laravel Echo": "Enables ->toUser()/->toChannel(), for pushing a notification to a specific user from outside the current request (a queued job, a console command, ...) — not required for anything else. Always present already in a full Laravel app, so nothing extra to install there."
     },
     "autoload": {
         "psr-4": {

@@ -58,6 +58,48 @@
         ];
     }
 
+    // config('notify.strings') is snake_case, like every other key in that
+    // file — notify.js's own STRINGS object uses the camelCase spelling of
+    // the same keys (a plain JS object, not a Laravel config array), so this
+    // translates between the two rather than passing the array through as-is.
+    $stringsConfig = config('notify.strings', []);
+    $notifyStrings = [];
+    foreach ([
+        'close' => 'close',
+        'more_singular' => 'moreSingular',
+        'more_plural' => 'morePlural',
+        'esc_key' => 'escKey',
+        'esc_hint' => 'escHint',
+        'confirm' => 'confirm',
+        'cancel' => 'cancel',
+        'url' => 'url',
+        'action_success' => 'actionSuccess',
+        'action_error' => 'actionError',
+    ] as $configKey => $jsKey) {
+        if (array_key_exists($configKey, $stringsConfig)) {
+            $notifyStrings[$jsKey] = $stringsConfig[$configKey];
+        }
+    }
+
+    // Resolved once per page load: a closure gets the request, a plain
+    // string is used verbatim, and leaving it null auto-resolves to this
+    // visitor's own channel when logged in — skipped for a guest, and
+    // skipped entirely unless broadcasting is explicitly turned on (see
+    // config('notify.broadcast') — disabled by default, since a plain app
+    // with no broadcasting driver at all has no websocket to reach).
+    $broadcastChannel = null;
+
+    if (config('notify.broadcast.enabled', false)) {
+        $channelConfig = config('notify.broadcast.channel');
+
+        $broadcastChannel = match (true) {
+            $channelConfig instanceof \Closure => $channelConfig(request()),
+            is_string($channelConfig) => $channelConfig,
+            \Illuminate\Support\Facades\Auth::check() => 'notify.'.\Illuminate\Support\Facades\Auth::id(),
+            default => null,
+        };
+    }
+
     // built up-front, as a plain variable: @json() with a nested multi-call
     // array expression inline can truncate mid-expression during Blade
     // compilation — a bare variable reference is unambiguous.
@@ -69,8 +111,9 @@
         'theme' => config('notify.theme'),
         'colorScheme' => config('notify.color_scheme'),
         'icons' => config('notify.icons', []),
-        'strings' => config('notify.strings', []),
+        'strings' => $notifyStrings,
         'buttonColors' => config('notify.button_colors', []),
+        'broadcastChannel' => $broadcastChannel,
     ];
     $notifyJsQueue = array_values($queue);
 @endphp

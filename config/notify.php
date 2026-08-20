@@ -112,21 +112,57 @@ return [
     | Every hardcoded piece of UI chrome text — never a payload's own free-form
     | title/message/action labels, which are already fully customizable per
     | call — lives here, so it can be translated or reworded globally without
-    | touching the JS. Same keys as Notify.setStrings() client-side; anything
-    | left unset keeps its built-in French default.
+    | touching the JS. Anything left unset keeps its built-in French default.
+    |
+    | Keys are snake_case here, like every other key in this file — notify.js's
+    | own Notify.setStrings() uses the camelCase spelling of the same keys
+    | (moreSingular, escKey, ...) since that one's a plain JS object, not a
+    | Laravel config array; <x-notify::root /> translates between the two.
     |
     */
     'strings' => [
         // 'close' => 'Close',
-        // 'moreSingular' => 'more notification',
-        // 'morePlural' => 'more notifications',
-        // 'escKey' => 'Esc',
-        // 'escHint' => 'to close',
+        // 'more_singular' => 'more notification',
+        // 'more_plural' => 'more notifications',
+        // 'esc_key' => 'Esc',
+        // 'esc_hint' => 'to close',
         // 'confirm' => 'Confirm',
         // 'cancel' => 'Cancel',
         // 'url' => 'View',
-        // 'actionSuccess' => 'Done.',
-        // 'actionError' => 'Something went wrong.',
+        // 'action_success' => 'Done.',
+        // 'action_error' => 'Something went wrong.',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Broadcasting to a specific user
+    |--------------------------------------------------------------------------
+    |
+    | ->toUser($user)/->toChannel($channel) push a notification to a specific
+    | user from outside the current request entirely (a queued job, a console
+    | command, ...) — session flash and Livewire dispatch both only ever
+    | target "whoever is making this request", which can't reach that case.
+    |
+    | Requires the host app's own broadcasting setup already in place (a
+    | driver — Reverb/Pusher/Ably —, Laravel Echo loaded client-side, and a
+    | routes/channels.php entry authorizing the channel) — disabled by
+    | default so a plain Laravel app with no broadcasting configured at all
+    | never tries to reach a websocket connection that doesn't exist. Only
+    | ever delivered in real time to a currently-connected recipient; there is
+    | no persistence for one who's offline (see README roadmap).
+    |
+    */
+    'broadcast' => [
+        'enabled' => false,
+
+        /*
+         * The channel <x-notify::root /> auto-subscribes to via Echo, for
+         * the common "push to whichever user is viewing this page" case —
+         * null resolves to "notify.{auth()->id()}" for a logged-in visitor,
+         * and skips auto-subscription entirely for a guest. A closure
+         * receiving the current request is also accepted for full control.
+         */
+        'channel' => null,
     ],
 
     /*

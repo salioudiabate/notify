@@ -31,7 +31,7 @@ trait InteractsWithNotifications
     /**
      * $this->notify('Utilisateur créé.') sends a success toast immediately.
      * $this->notify() returns the builder for the advanced fluent form:
-     * $this->notify()->error()->title('Oups')->message('...')->send().
+     * $this->notify()->asError()->title('Oups')->message('...')->send().
      */
     public function notify(?string $message = null, ?string $title = null): ToastBuilder|PendingNotification
     {
@@ -39,7 +39,7 @@ trait InteractsWithNotifications
             return Notify::toast()->forComponent($this);
         }
 
-        return Notify::toast()->success()->title($title)->message($message)->forComponent($this)->send();
+        return Notify::toast()->asSuccess()->title($title)->message($message)->forComponent($this)->send();
     }
 
     public function confirm(string $title, string $message, string|Closure $action, array $params = []): PendingNotification

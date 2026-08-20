@@ -21,6 +21,7 @@ final class PendingNotification
         private readonly NotifyManager $manager,
         private readonly string $id,
         private readonly ?object $component = null,
+        private readonly ?string $broadcastChannel = null,
     ) {}
 
     public function id(): string
@@ -70,10 +71,10 @@ final class PendingNotification
 
     /** Closes this specific notification remotely — e.g. a loading toast that
      *  turns out to need no further feedback at all, rather than a
-     *  success()/error() state. Targets the same component update() would. */
+     *  success()/error() state. Targets the same component/channel update() would. */
     public function dismiss(): static
     {
-        $this->manager->driverFor($this->component)->dismiss($this->id);
+        $this->manager->driverFor($this->component, $this->broadcastChannel)->dismiss($this->id);
 
         return $this;
     }
@@ -82,6 +83,14 @@ final class PendingNotification
     {
         $builder = $this->manager->update($this->id);
 
-        return $this->component ? $builder->forComponent($this->component) : $builder;
+        if ($this->component) {
+            $builder = $builder->forComponent($this->component);
+        }
+
+        if ($this->broadcastChannel) {
+            $builder = $builder->toChannel($this->broadcastChannel);
+        }
+
+        return $builder;
     }
 }

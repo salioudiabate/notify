@@ -13,6 +13,7 @@ use Salioudiabate\Notify\Builders\ProgressBuilder;
 use Salioudiabate\Notify\Builders\ToastBuilder;
 use Salioudiabate\Notify\Builders\UpdateBuilder;
 use Salioudiabate\Notify\Contracts\NotificationDriver;
+use Salioudiabate\Notify\Drivers\BroadcastDriver;
 use Salioudiabate\Notify\Drivers\LivewireDriver;
 use Salioudiabate\Notify\Drivers\SessionDriver;
 use Salioudiabate\Notify\Support\PendingNotification;
@@ -41,28 +42,28 @@ final class NotifyManager
 
     /**
      * One-liner shorthands for the common "banner with this message" case —
-     * mirrors success()/error()/warning()/info() above, which do the same
+     * mirrors success()/error()/warning()/info() below, which do the same
      * for toast(). Use alert() directly for anything more custom (a button(),
      * a longer-lived group(), ...).
      */
     public function alertSuccess(string $message, ?string $title = null): PendingNotification
     {
-        return $this->alert()->success()->title($title)->message($message)->send();
+        return $this->alert()->asSuccess()->title($title)->message($message)->send();
     }
 
     public function alertError(string $message, ?string $title = null): PendingNotification
     {
-        return $this->alert()->error()->title($title)->message($message)->send();
+        return $this->alert()->asError()->title($title)->message($message)->send();
     }
 
     public function alertWarning(string $message, ?string $title = null): PendingNotification
     {
-        return $this->alert()->warning()->title($title)->message($message)->send();
+        return $this->alert()->asWarning()->title($title)->message($message)->send();
     }
 
     public function alertInfo(string $message, ?string $title = null): PendingNotification
     {
-        return $this->alert()->info()->title($title)->message($message)->send();
+        return $this->alert()->asInfo()->title($title)->message($message)->send();
     }
 
     public function confirm(?string $title = null, ?string $message = null, string|\Closure|null $onConfirm = null): ConfirmBuilder
@@ -89,22 +90,22 @@ final class NotifyManager
 
     public function success(string $message, ?string $title = null): PendingNotification
     {
-        return $this->toast()->success()->title($title)->message($message)->send();
+        return $this->toast()->asSuccess()->title($title)->message($message)->send();
     }
 
     public function error(string $message, ?string $title = null): PendingNotification
     {
-        return $this->toast()->error()->title($title)->message($message)->send();
+        return $this->toast()->asError()->title($title)->message($message)->send();
     }
 
     public function warning(string $message, ?string $title = null): PendingNotification
     {
-        return $this->toast()->warning()->title($title)->message($message)->send();
+        return $this->toast()->asWarning()->title($title)->message($message)->send();
     }
 
     public function info(string $message, ?string $title = null): PendingNotification
     {
-        return $this->toast()->info()->title($title)->message($message)->send();
+        return $this->toast()->asInfo()->title($title)->message($message)->send();
     }
 
     public function update(string $id): UpdateBuilder
@@ -167,9 +168,18 @@ final class NotifyManager
      *                                  Left untyped so this signature never
      *                                  forces a class load when Livewire isn't
      *                                  installed at all.
+     * @param  string|null  $broadcastChannel  Set by ->toUser()/->toChannel() —
+     *                                         wins over everything else, since
+     *                                         it's always a deliberate,
+     *                                         explicit target rather than
+     *                                         something to auto-detect.
      */
-    public function driverFor(?object $component = null): NotificationDriver
+    public function driverFor(?object $component = null, ?string $broadcastChannel = null): NotificationDriver
     {
+        if ($broadcastChannel !== null) {
+            return new BroadcastDriver($broadcastChannel);
+        }
+
         if ($component) {
             return new LivewireDriver($component);
         }

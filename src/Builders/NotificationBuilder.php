@@ -66,6 +66,11 @@ abstract class NotificationBuilder
      *  component last booted the trait on the page. */
     protected ?object $component = null;
 
+    /** Set via toUser()/toChannel() — routes send() (and any later update()/
+     *  dismiss() through the returned PendingNotification) to BroadcastDriver
+     *  instead of whatever the request would otherwise resolve to. */
+    protected ?string $broadcastChannel = null;
+
     public function __construct(protected readonly NotifyManager $manager)
     {
         $this->id = (string) Str::uuid();
@@ -191,13 +196,35 @@ abstract class NotificationBuilder
         return $this;
     }
 
+    /**
+     * Pushes this notification to a specific user over their own private
+     * broadcast channel, instead of the current request's session/Livewire
+     * component — for notifying someone from outside the request that
+     * concerns them at all (a queued job, a console command, ...). Requires
+     * the host app's own broadcasting setup (see README § Broadcasting to a
+     * specific user). $user needs either a `getKey()` method (any Eloquent
+     * model) or to already be the channel suffix itself (an id, a UUID, ...).
+     */
+    public function toUser(mixed $user): static
+    {
+        return $this->toChannel('notify.'.(is_object($user) && method_exists($user, 'getKey') ? $user->getKey() : $user));
+    }
+
+    /** Same as toUser(), on an arbitrary channel name instead of the notify.{id} convention. */
+    public function toChannel(string $channel): static
+    {
+        $this->broadcastChannel = $channel;
+
+        return $this;
+    }
+
     public function send(): PendingNotification
     {
         $payload = $this->toPayload();
 
-        $this->manager->driverFor($this->component)->push($payload);
+        $this->manager->driverFor($this->component, $this->broadcastChannel)->push($payload);
 
-        return new PendingNotification($this->manager, $payload->id, $this->component);
+        return new PendingNotification($this->manager, $payload->id, $this->component, $this->broadcastChannel);
     }
 
     /** Alias kept for readability at call sites: ->confirm()->show(), ->dialog()->show() */

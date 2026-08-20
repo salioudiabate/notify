@@ -36,6 +36,7 @@ $import->success('Import terminé.');
 - [Custom templates](#custom-templates)
 - [Icons, text & button colors](#icons-text--button-colors)
 - [Light & dark mode](#light--dark-mode)
+- [Broadcasting to a specific user](#broadcasting-to-a-specific-user)
 - [Confirmations & server actions](#confirmations--server-actions)
 - [Existing `->with('success', ...)` calls, validation & exceptions](#existing---withsuccess--calls-validation--exceptions)
 - [Configuration](#configuration)
@@ -44,13 +45,14 @@ $import->success('Import terminé.');
 
 ## Why
 
-Most notification packages pick a side: either a Livewire-only toast component, or a session-flash Blade partial with no Livewire story. Notify is built the other way around — one declarative payload, one front-end store, three ways to feed it:
+Most notification packages pick a side: either a Livewire-only toast component, or a session-flash Blade partial with no Livewire story. Notify is built the other way around — one declarative payload, one front-end store, four ways to feed it:
 
 | Producer | When it's used | Round trip |
 |---|---|---|
 | **Session flash** | Any controller, form request, queued job, or plain Blade page — Livewire installed or not | Next full page load |
 | **Livewire dispatch** | A component using `InteractsWithNotifications` | Instant, no reload |
 | **`window.Notify`** | Any inline script, with zero backend involved | None |
+| **Broadcast** (`->toUser()`/`->toChannel()`) | A specific user, from outside the current request entirely (a queued job, a console command) | Real-time, over Echo |
 
 The backend never renders HTML — it only ever produces a small JSON payload (`type`, `variant`, `title`, `message`, `actions`, ...). `resources/js/notify.js` is the only thing that turns that into a toast, an alert, a confirmation dialog or a progress card, so every surface — session-flashed, Livewire-pushed, or JS-triggered — renders through the exact same visual system.
 
@@ -134,7 +136,7 @@ class DeleteClientButton extends Component
 `notify()`/`confirm()` above are one-liners that send right away — they can't reach `->danger()`, `->group()`, `->confirmColor()`, or anything else that needs chaining before `->send()`. For that, use their builder-returning counterparts instead, still bound to the same component:
 
 ```php
-$this->notifyBuilder()->error()->title('Oups')->message('...')->group('errors')->send();
+$this->notifyBuilder()->asError()->title('Oups')->message('...')->group('errors')->send();
 
 $this->confirmBuilder('Supprimer définitivement ?', 'Cette action est irréversible.')
     ->danger()
@@ -171,12 +173,12 @@ Notify::error($message, $title = null);
 Notify::warning($message, $title = null);
 Notify::info($message, $title = null);
 
-Notify::toast()->success()->title('Succès')->message('...')->duration(5000)->send();
+Notify::toast()->asSuccess()->title('Succès')->message('...')->duration(5000)->send();
 
 // alert() covers both a one-off important notice (button() alone) and a
 // persistent banner (add action() too) — same builder, more actions
-Notify::alert()->warning()->title('Attention')->message('...')->button('Compris')->show();
-Notify::alert()->info()->title('Maintenance programmée')->message('...')
+Notify::alert()->asWarning()->title('Attention')->message('...')->button('Compris')->show();
+Notify::alert()->asInfo()->title('Maintenance programmée')->message('...')
     ->action('En savoir plus', 'https://...', 'link')->button('Fermer')->show(); // persists until dismissed
 
 // one-liners for the common "banner with this message" case, mirroring
@@ -191,12 +193,12 @@ Notify::confirm('Titre', 'Message')->danger()->confirmText('Supprimer')->onConfi
 
 // dialog() is free-form (any number of action() buttons) — centered() switches
 // to the single-button, celebratory layout; without it you get a regular modal
-Notify::dialog()->success()->centered()->title('Paiement réussi')->message('...')->action('Continuer')->show();
+Notify::dialog()->asSuccess()->centered()->title('Paiement réussi')->message('...')->action('Continuer')->show();
 
 // called from inside a Livewire component method: 'signOut' resolves to
 // $this->signOut() on that same component — the same target resolution
 // onConfirm() uses (a route name or URL always wins first, see below)
-Notify::dialog()->info()->title('Session bientôt expirée')->message('...')
+Notify::dialog()->asInfo()->title('Session bientôt expirée')->message('...')
     ->action('Se déconnecter', 'signOut')->action('Rester connecté', null, 'primary')->show();
 
 Notify::progress()->title('Importation')->progress(45)->status('Lot 4 sur 7')->send();
@@ -214,9 +216,11 @@ Notify::exception($e); // never leaks $e->getMessage() in production unless conf
 $pending->dismiss(); // same as Notify::dismiss($pending->id()), targeting the right component automatically
 ```
 
-Shared fluent methods on every builder: `title()`, `message()`, `icon()`, `duration()`, `position()`, `dismissible()`, `persistent()`, `group()`, `id()`, `action($label, $target, $style, $color)`, `url($url, $label, $color)`, `template($name)`.
+Shared fluent methods on every builder: `title()`, `message()`, `icon()`, `duration()`, `position()`, `dismissible()`, `persistent()`, `group()`, `id()`, `action($label, $target, $style, $color)`, `url($url, $label, $color)`, `template($name)`, `toUser($user)`/`toChannel($channel)` (see [below](#broadcasting-to-a-specific-user)).
 
 `position()` accepts `top-right` (default), `top-left`, `top-center`, `bottom-right`, `bottom-left`, `bottom-center`. `action()`'s `$target` resolves exactly like `onConfirm()` does (see [below](#confirmations--server-actions)) — a route name, a URL, a Livewire method name, or a `Closure` all work the same way on any toast/alert/dialog action, not just a confirmation's.
+
+**Why `asSuccess()`, not `success()`?** Every `toast()`/`alert()`/`dialog()`/`progress()` builder above uses `asSuccess()`/`asError()`/`asWarning()`/`asInfo()` — deliberately spelled differently from `Notify::success($message)`, `$pending->success($message)`, and `Notify::update($id)->success($message)`. Those three all take a message and either send right away or need one more `->send()`; a builder's `asSuccess()` only flips its color and takes nothing at all. Keeping the two families visually distinct means the method name alone tells you which behavior you're getting, instead of having to remember which class you're chaining off of.
 
 **Extending a builder.** None of the builders are `final`, and all of them inherit Laravel's `Macroable` trait — add your own fluent methods either by subclassing, or without subclassing at all:
 
@@ -225,7 +229,7 @@ ToastBuilder::macro('forTenant', function (Tenant $tenant) {
     return $this->meta(['tenant' => $tenant->id]);
 });
 
-Notify::toast()->success()->message('...')->forTenant($tenant)->send();
+Notify::toast()->asSuccess()->message('...')->forTenant($tenant)->send();
 ```
 
 ## Custom templates
@@ -264,7 +268,7 @@ Notify.registerTemplate('brand', {
 Use it for one notification:
 
 ```php
-Notify::toast()->success()->title('Fait')->message('...')->template('brand')->send();
+Notify::toast()->asSuccess()->title('Fait')->message('...')->template('brand')->send();
 ```
 
 ...or make it the default for every notification in the app, in `config/notify.php`:
@@ -317,12 +321,22 @@ Notify.setStrings({
 ```
 
 ```php
-// config/notify.php — same keys, applied globally without a <script> tag;
-// leave any key out to keep its built-in French default
+// config/notify.php — same effect, applied globally without a <script> tag;
+// leave any key out to keep its built-in French default. Keys are snake_case
+// here, like every other key in this file — Notify.setStrings() above uses
+// the camelCase spelling of the same keys since that one's a plain JS object;
+// <x-notify::root /> translates between the two.
 'strings' => [
     'close' => 'Close',
+    'more_singular' => 'more notification',
+    'more_plural' => 'more notifications',
+    'esc_key' => 'Esc',
+    'esc_hint' => 'to close',
     'confirm' => 'Confirm',
     'cancel' => 'Cancel',
+    'url' => 'View',
+    'action_success' => 'Done.',
+    'action_error' => 'Something went wrong.',
 ],
 ```
 
@@ -349,7 +363,7 @@ Each style accepts `bg` (required to have any effect), plus optional `fg` (text)
 A single button can go its own way regardless of the global setting — every button-producing method accepts an optional color, a plain string (background only) or a `['bg' => ..., 'fg' => ..., 'border' => ...]` array:
 
 ```php
-Notify::toast()->success()->message('Done.')->action('Undo', fn () => $this->undo(), 'primary', '#7c3aed')->send();
+Notify::toast()->asSuccess()->message('Done.')->action('Undo', fn () => $this->undo(), 'primary', '#7c3aed')->send();
 
 Notify::confirm('Delete this?')
     ->confirmColor(['bg' => '#dc2626', 'fg' => '#fff'])
@@ -386,6 +400,56 @@ Notify.getColorScheme(); // 'light' | 'dark' | 'system'
 ```
 
 `setColorScheme()` persists the choice in `localStorage`, so it survives reloads without any server round-trip, and overrides both `config('notify.color_scheme')` and the OS preference until `'system'` is passed again. If your app already has its own dark-mode cookie/session value, call `Notify.setColorScheme()` once on page load with that value instead of leaving it to `config()` — the two are independent, Notify doesn't read your app's own dark-mode flag automatically.
+
+## Broadcasting to a specific user
+
+Session flash and Livewire dispatch both only ever target "whoever is making this request" — neither can reach a user from outside the request that concerns them at all: a queued job finishing an export, a webhook, a console command, a different HTTP request than the one the recipient is sitting on. `->toUser($user)`/`->toChannel($channel)` are the fourth producer, for exactly that case:
+
+```php
+// from a queued job, once the export is actually ready — the user could be
+// anywhere else in the app, or not even online, by the time this runs
+Notify::toast()->asSuccess()->message('Votre export est prêt.')->toUser($user)->send();
+
+// or an arbitrary channel name instead of the notify.{id} convention toUser() uses
+Notify::toast()->asInfo()->message('...')->toChannel('team.acme.alerts')->send();
+```
+
+This is **real-time delivery to a currently-connected recipient only** — there's no persistence for someone who's offline right now (that's the separate, still-open "database-backed persistent notifications" roadmap item). Three things need to already be true for it to reach anyone at all:
+
+1. **The host app's own broadcasting is configured** — a driver (Reverb, Pusher, Ably, ...), and `window.Echo` loaded client-side. Notify doesn't set any of this up; it only uses `event()` and Echo's public API once they're there.
+2. **`config('notify.broadcast.enabled')` is `true`** — `false` by default, so a plain app with no broadcasting driver at all never tries to reach a websocket connection that doesn't exist.
+3. **`routes/channels.php` authorizes the channel** — private channels always require this, same as any other Laravel broadcasting:
+
+```php
+// routes/channels.php
+Broadcast::channel('notify.{id}', fn ($user, $id) => (int) $user->id === (int) $id);
+```
+
+With that in place, `<x-notify::root />` auto-subscribes each visitor to their own `notify.{auth()->id()}` channel — nothing extra to wire up client-side for the common case:
+
+```php
+// config/notify.php
+'broadcast' => [
+    'enabled' => true,
+    'channel' => null, // null = notify.{auth()->id()} per visitor, skipped entirely as a guest
+],
+```
+
+Set `channel` to a plain string, or a closure receiving the current request, for full control instead — e.g. a per-team channel rather than a per-user one:
+
+```php
+'channel' => fn ($request) => $request->user()?->currentTeam?->broadcastChannel(),
+```
+
+A notification sent this way still returns the same `PendingNotification` as any other `->send()` — `->success()`/`->error()`/`->dismiss()` called on it keep routing through the same channel automatically:
+
+```php
+$pending = Notify::toast()->loading()->message('Export en cours…')->toUser($user)->send();
+// ... later, from the same job ...
+$pending->success('Export terminé.'); // reaches the same notify.{$user->id} channel
+```
+
+Note that `->toUser()`/`->toChannel()` need the full builder form — `Notify::success($message)` and friends already call `->send()` internally, with no window left to set a channel first, the same limitation `->group()` or `->template()` have on those one-liners.
 
 ## Confirmations & server actions
 
@@ -427,7 +491,7 @@ See `config/notify.php` for the full reference: default position/duration per va
 
 ## Roadmap
 
-Database-backed persistent notifications, browser (native) notifications, presets, sound, and `Notify::dialog()->view()`/`->component()` for rendering arbitrary Blade or Livewire content inside the dialog shell — today `dialog()` supports title/message/icon/actions only, deliberately, rather than a half-finished remote-content pipeline.
+Database-backed persistent notifications (so one sent via `->toUser()`/`->toChannel()` to an offline recipient isn't simply lost — see [Broadcasting to a specific user](#broadcasting-to-a-specific-user)), browser (native) notifications, presets, sound, and `Notify::dialog()->view()`/`->component()` for rendering arbitrary Blade or Livewire content inside the dialog shell — today `dialog()` supports title/message/icon/actions only, deliberately, rather than a half-finished remote-content pipeline.
 
 ## License
 

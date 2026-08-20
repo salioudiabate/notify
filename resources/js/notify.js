@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  var CFG = window.__NOTIFY_CONFIG__ || { position: 'top-right', maxVisible: 4, dismissible: true, animations: true, colorScheme: null, icons: {}, strings: {}, buttonColors: {} };
+  var CFG = window.__NOTIFY_CONFIG__ || { position: 'top-right', maxVisible: 4, dismissible: true, animations: true, colorScheme: null, icons: {}, strings: {}, buttonColors: {}, broadcastChannel: null };
 
   /** @type {Array<object>} every currently-tracked payload, rendered or queued behind max_visible */
   var items = [];
@@ -144,6 +144,28 @@
     if (c.bg) btn.style.background = c.bg;
     if (c.fg) btn.style.color = c.fg;
     if (c.border) btn.style.borderColor = c.border;
+  }
+
+  // ------------------------------------------------------------- broadcast --
+
+  var echoSubscribed = false;
+
+  /**
+   * BroadcastDriver's counterpart to bindLivewire() below — subscribes to
+   * config('notify.broadcast.channel') (resolved server-side into
+   * CFG.broadcastChannel, see <x-notify::root />) via Laravel Echo, so a
+   * notification pushed to a specific user from outside the current
+   * request (a queued job, a console command) still reaches this page in
+   * real time. A no-op whenever Echo isn't loaded or broadcasting isn't
+   * enabled — nothing here requires either.
+   */
+  function bindEcho() {
+    if (echoSubscribed || !window.Echo || !CFG.broadcastChannel) return;
+    echoSubscribed = true;
+
+    window.Echo.private(CFG.broadcastChannel)
+      .listen('.notify.push', function (e) { ingest(e.notification); })
+      .listen('.notify.command', function (e) { ingest(e); });
   }
 
   // ---------------------------------------------------------------- icons --
@@ -865,6 +887,15 @@
       bindLivewire();
     } else {
       document.addEventListener('livewire:init', bindLivewire);
+    }
+
+    bindEcho();
+    // Echo has no equivalent of Livewire's 'livewire:init' event to wait on,
+    // so this is a best-effort fallback for the case where the host app's own
+    // bootstrap script (which creates window.Echo) hasn't run yet by the time
+    // this deferred script does — harmless, and a no-op, if it already has.
+    if (!echoSubscribed) {
+      window.addEventListener('load', bindEcho);
     }
   }
 

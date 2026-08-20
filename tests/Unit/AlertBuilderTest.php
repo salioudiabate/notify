@@ -5,7 +5,7 @@ declare(strict_types=1);
 use Salioudiabate\Notify\Facades\Notify;
 
 it('is persistent by default, unlike a toast', function () {
-    Notify::alert()->warning()->title('Attention')->message('...')->send();
+    Notify::alert()->asWarning()->title('Attention')->message('...')->send();
 
     expect(lastQueuedPayload())
         ->type->toBe('alert')
@@ -14,7 +14,7 @@ it('is persistent by default, unlike a toast', function () {
 });
 
 it('button() adds a single primary, target-less action', function () {
-    Notify::alert()->warning()->message('...')->button('Compris')->send();
+    Notify::alert()->asWarning()->message('...')->button('Compris')->send();
 
     expect(lastQueuedPayload()['actions'])->toBe([
         ['label' => 'Compris', 'style' => 'primary', 'target' => null, 'closesDialog' => true, 'color' => null],
@@ -22,13 +22,13 @@ it('button() adds a single primary, target-less action', function () {
 });
 
 it('button() accepts a one-off color override, same as action()', function () {
-    Notify::alert()->warning()->message('...')->button('Compris', '#7c3aed')->send();
+    Notify::alert()->asWarning()->message('...')->button('Compris', '#7c3aed')->send();
 
     expect(lastQueuedPayload()['actions'][0]['color'])->toBe(['bg' => '#7c3aed']);
 });
 
 it('button() also accepts a target, unlike before — it no longer has to be dismiss-only', function () {
-    Notify::alert()->warning()->message('...')->button('Réessayer', null, 'clients.index')->send();
+    Notify::alert()->asWarning()->message('...')->button('Réessayer', null, 'clients.index')->send();
 
     expect(lastQueuedPayload()['actions'][0])
         ->label->toBe('Réessayer')
@@ -40,7 +40,7 @@ it('button() also accepts a target, unlike before — it no longer has to be dis
 });
 
 it('combines button() with a regular action() for a persistent-banner-style pair', function () {
-    Notify::alert()->info()->message('...')
+    Notify::alert()->asInfo()->message('...')
         ->action('En savoir plus', 'https://example.com', 'link')
         ->button('Fermer')
         ->send();

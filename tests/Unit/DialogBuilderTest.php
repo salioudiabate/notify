@@ -11,7 +11,7 @@ it('is not centered by default', function () {
 });
 
 it('centered() flags the payload for the celebratory single-button layout', function () {
-    Notify::dialog()->success()->centered()->title('Paiement réussi')->action('Continuer')->send();
+    Notify::dialog()->asSuccess()->centered()->title('Paiement réussi')->action('Continuer')->send();
 
     expect(lastQueuedPayload())
         ->meta->toMatchArray(['centered' => true])
@@ -19,7 +19,7 @@ it('centered() flags the payload for the celebratory single-button layout', func
 });
 
 it('accepts any number of action() buttons, unlike ConfirmBuilder\'s fixed pair', function () {
-    Notify::dialog()->info()->title('t')
+    Notify::dialog()->asInfo()->title('t')
         ->action('Un')
         ->action('Deux')
         ->action('Trois')

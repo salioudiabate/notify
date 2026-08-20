@@ -7,22 +7,22 @@ use Salioudiabate\Notify\Facades\Notify;
 use Salioudiabate\Notify\NotifyManager;
 
 it('leaves a null target as null — a plain dismiss action', function () {
-    Notify::toast()->success()->action('OK')->send();
+    Notify::toast()->asSuccess()->action('OK')->send();
 
     expect(lastQueuedPayload()['actions'][0]['target'])->toBeNull();
 });
 
 it('treats an absolute URL or a root-relative path as a literal URL, verbatim', function () {
-    Notify::toast()->success()->action('Voir', 'https://example.com')->send();
+    Notify::toast()->asSuccess()->action('Voir', 'https://example.com')->send();
     expect(lastQueuedPayload()['actions'][0]['target'])->toBe(['type' => 'url', 'url' => 'https://example.com']);
 
-    Notify::toast()->success()->action('Voir', '/relative/path')->send();
+    Notify::toast()->asSuccess()->action('Voir', '/relative/path')->send();
     expect(lastQueuedPayload()['actions'][0]['target'])->toBe(['type' => 'url', 'url' => '/relative/path']);
 });
 
 it('resolves a matching named route before ever considering a Livewire method call', function () {
     // 'clients.index' is registered once for every test, in TestCase::defineRoutes()
-    Notify::toast()->success()->action('Voir', 'clients.index')->send();
+    Notify::toast()->asSuccess()->action('Voir', 'clients.index')->send();
 
     expect(lastQueuedPayload()['actions'][0]['target'])->toBe([
         'type' => 'url',
@@ -46,7 +46,7 @@ it('resolves a bare method name to the active Livewire component once one is reg
 
     app(NotifyManager::class)->registerLivewireComponent($component);
 
-    Notify::toast()->success()->action('Restaurer', 'restore')->send();
+    Notify::toast()->asSuccess()->action('Restaurer', 'restore')->send();
 
     expect($component->dispatched)->toHaveCount(1);
 
@@ -61,7 +61,7 @@ it('resolves a bare method name to the active Livewire component once one is reg
 });
 
 it('falls back to treating an unrecognized string as a literal URL when no component is active', function () {
-    Notify::toast()->success()->action('Go', 'notARouteOrMethod')->send();
+    Notify::toast()->asSuccess()->action('Go', 'notARouteOrMethod')->send();
 
     expect(lastQueuedPayload()['actions'][0]['target'])->toBe([
         'type' => 'url',

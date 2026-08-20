@@ -12,7 +12,7 @@ it('lets a custom method be registered on a builder via Macroable, without subcl
         return $this->meta(['tenant' => $tenant]);
     });
 
-    Notify::toast()->success()->message('...')->forTenant('acme')->send();
+    Notify::toast()->asSuccess()->message('...')->forTenant('acme')->send();
 
     expect(lastQueuedPayload()['meta'])->toBe(['tenant' => 'acme']);
 
@@ -28,7 +28,7 @@ it('lets a builder be subclassed, since none of them are final anymore', functio
         }
     };
 
-    $subclass->success()->loud()->message('...')->send();
+    $subclass->asSuccess()->loud()->message('...')->send();
 
     expect(lastQueuedPayload()['title'])->toBe('!!!');
 });

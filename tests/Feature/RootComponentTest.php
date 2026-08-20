@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Str;
 use Illuminate\Support\ViewErrorBag;
 
@@ -39,6 +40,114 @@ it('embeds config(notify.icons), config(notify.strings) and config(notify.button
     expect($jsConfig['icons'])->toBe(['success' => '<svg data-mine></svg>'])
         ->and($jsConfig['strings'])->toBe(['close' => 'Close', 'confirm' => 'Yes'])
         ->and($jsConfig['buttonColors'])->toBe(['primary' => ['bg' => '#7c3aed', 'fg' => '#fff']]);
+});
+
+it('translates config(notify.strings)\'s snake_case keys into the camelCase notify.js expects', function () {
+    config(['notify.strings' => [
+        'more_singular' => 'notification restante',
+        'more_plural' => 'notifications restantes',
+        'esc_key' => 'Échap',
+        'esc_hint' => 'pour fermer',
+        'action_success' => 'Fait.',
+        'action_error' => 'Échec.',
+        // an unrecognized key must not leak through as-is
+        'not_a_real_key' => 'ignored',
+    ]]);
+
+    $html = (string) view('notify::components.root')->render();
+    $jsConfig = json_decode(Str::before(Str::after($html, 'window.__NOTIFY_CONFIG__ = '), ';'), true);
+
+    expect($jsConfig['strings'])->toBe([
+        'moreSingular' => 'notification restante',
+        'morePlural' => 'notifications restantes',
+        'escKey' => 'Échap',
+        'escHint' => 'pour fermer',
+        'actionSuccess' => 'Fait.',
+        'actionError' => 'Échec.',
+    ]);
+});
+
+it('leaves broadcastChannel null when config(notify.broadcast.enabled) is false, its default', function () {
+    $html = (string) view('notify::components.root')->render();
+    $jsConfig = json_decode(Str::before(Str::after($html, 'window.__NOTIFY_CONFIG__ = '), ';'), true);
+
+    expect($jsConfig['broadcastChannel'])->toBeNull();
+});
+
+it('resolves broadcastChannel to a plain configured string once broadcasting is enabled', function () {
+    config(['notify.broadcast' => ['enabled' => true, 'channel' => 'notify.custom-channel']]);
+
+    $html = (string) view('notify::components.root')->render();
+    $jsConfig = json_decode(Str::before(Str::after($html, 'window.__NOTIFY_CONFIG__ = '), ';'), true);
+
+    expect($jsConfig['broadcastChannel'])->toBe('notify.custom-channel');
+});
+
+it('lets config(notify.broadcast.channel) be a closure, given the current request', function () {
+    config(['notify.broadcast' => [
+        'enabled' => true,
+        'channel' => fn ($request) => 'notify.from-closure-'.$request->method(),
+    ]]);
+
+    $html = (string) view('notify::components.root')->render();
+    $jsConfig = json_decode(Str::before(Str::after($html, 'window.__NOTIFY_CONFIG__ = '), ';'), true);
+
+    expect($jsConfig['broadcastChannel'])->toBe('notify.from-closure-GET');
+});
+
+it('auto-resolves broadcastChannel to notify.{auth()->id()} for a logged-in visitor, with no channel configured', function () {
+    config(['notify.broadcast' => ['enabled' => true, 'channel' => null]]);
+
+    $user = new class implements Authenticatable
+    {
+        public function getAuthIdentifierName()
+        {
+            return 'id';
+        }
+
+        public function getAuthIdentifier()
+        {
+            return 42;
+        }
+
+        public function getAuthPasswordName()
+        {
+            return 'password';
+        }
+
+        public function getAuthPassword()
+        {
+            return 'hash';
+        }
+
+        public function getRememberToken()
+        {
+            return null;
+        }
+
+        public function setRememberToken($value) {}
+
+        public function getRememberTokenName()
+        {
+            return 'remember_token';
+        }
+    };
+
+    $this->actingAs($user);
+
+    $html = (string) view('notify::components.root')->render();
+    $jsConfig = json_decode(Str::before(Str::after($html, 'window.__NOTIFY_CONFIG__ = '), ';'), true);
+
+    expect($jsConfig['broadcastChannel'])->toBe('notify.42');
+});
+
+it('skips broadcastChannel auto-resolution entirely for a guest visitor', function () {
+    config(['notify.broadcast' => ['enabled' => true, 'channel' => null]]);
+
+    $html = (string) view('notify::components.root')->render();
+    $jsConfig = json_decode(Str::before(Str::after($html, 'window.__NOTIFY_CONFIG__ = '), ';'), true);
+
+    expect($jsConfig['broadcastChannel'])->toBeNull();
 });
 
 function renderedQueue(): array
