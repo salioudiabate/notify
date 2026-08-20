@@ -53,3 +53,15 @@ it('url() defaults its label to "Voir", overridable per call or globally via con
 
     expect(lastQueuedPayload()['actions'][0]['label'])->toBe('Ouvrir');
 });
+
+it('action()/url() attach a one-off color to that single button only', function () {
+    Notify::toast()->success()->message('ok')
+        ->action('Voir', '/somewhere', 'link', '#7c3aed')
+        ->action('Ignorer', null, 'ghost', ['bg' => '#eee', 'fg' => '#111'])
+        ->send();
+
+    $actions = lastQueuedPayload()['actions'];
+
+    expect($actions[0]['color'])->toBe(['bg' => '#7c3aed'])
+        ->and($actions[1]['color'])->toBe(['bg' => '#eee', 'fg' => '#111']);
+});

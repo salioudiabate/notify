@@ -30,8 +30,8 @@ final class AlertBuilder extends NotificationBuilder
         return 'alert';
     }
 
-    public function button(string $label): static
+    public function button(string $label, string|array|null $color = null): static
     {
-        return $this->action($label, null, 'primary');
+        return $this->action($label, null, 'primary', $color);
     }
 }

@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  var CFG = window.__NOTIFY_CONFIG__ || { position: 'top-right', maxVisible: 4, dismissible: true, animations: true, colorScheme: null, icons: {}, strings: {} };
+  var CFG = window.__NOTIFY_CONFIG__ || { position: 'top-right', maxVisible: 4, dismissible: true, animations: true, colorScheme: null, icons: {}, strings: {}, buttonColors: {} };
 
   /** @type {Array<object>} every currently-tracked payload, rendered or queued behind max_visible */
   var items = [];
@@ -42,6 +42,7 @@
       escapeHtml: escapeHtml,
       icon: iconMarkup,
       actions: buildActions,
+      actionColor: applyActionColor,
       runAction: runAction,
       dismiss: dismiss,
     };
@@ -87,6 +88,62 @@
     }
 
     applyColorScheme(stored || CFG.colorScheme || 'system');
+  }
+
+  // ---------------------------------------------------------- button colors --
+
+  /**
+   * style -> which CSS custom properties its bg/fg/border map to. Kept
+   * separate from card/icon tokens (see notify.css) so overriding a button's
+   * color never touches text or semantic-icon colors too.
+   */
+  var BUTTON_COLOR_VARS = {
+    primary: { bg: '--notify-btn-primary-bg', fg: '--notify-btn-primary-fg' },
+    secondary: { bg: '--notify-btn-secondary-bg', fg: '--notify-btn-secondary-fg', border: '--notify-btn-secondary-border' },
+    danger: { bg: '--notify-btn-danger-bg', fg: '--notify-btn-danger-fg' },
+    ghost: { bg: '--notify-btn-ghost-bg', fg: '--notify-btn-ghost-fg', border: '--notify-btn-ghost-border' },
+    link: { fg: '--notify-btn-link-fg' },
+  };
+
+  /**
+   * Applies a color globally for one or more button styles, via
+   * config('notify.button_colors') at boot or Notify.setButtonColors() at
+   * runtime — e.g. { primary: { bg: '#7c3aed', fg: '#fff' } }. A single
+   * button can still override this on its own (see applyActionColor()).
+   */
+  function applyButtonColors(colors) {
+    var root = document.documentElement.style;
+
+    Object.keys(colors || {}).forEach(function (style) {
+      var vars = BUTTON_COLOR_VARS[style];
+      if (!vars) return;
+
+      var value = colors[style] || {};
+      Object.keys(vars).forEach(function (key) {
+        if (value[key]) root.setProperty(vars[key], value[key]);
+      });
+    });
+  }
+
+  /** A color string sets only the background (fg/border stay whatever the
+   *  style already uses); pass { bg, fg, border } for full control. Mirrors
+   *  Action::toArray()'s normalization on the PHP side. */
+  function normalizeColor(color) {
+    if (!color) return null;
+
+    return typeof color === 'string' ? { bg: color } : color;
+  }
+
+  /** Inline override for exactly one rendered button — ->action(..., color:)
+   *  / ->confirmColor() / ->cancelColor() / a plain color passed to
+   *  Notify.confirm({ confirmColor, cancelColor }). */
+  function applyActionColor(btn, color) {
+    var c = normalizeColor(color);
+    if (!c) return;
+
+    if (c.bg) btn.style.background = c.bg;
+    if (c.fg) btn.style.color = c.fg;
+    if (c.border) btn.style.borderColor = c.border;
   }
 
   // ---------------------------------------------------------------- icons --
@@ -213,6 +270,7 @@
     (payload.actions || []).forEach(function (action) {
       var btn = el('button', 'notify-btn notify-btn--' + (action.style || 'ghost'), escapeHtml(action.label));
       btn.type = 'button';
+      applyActionColor(btn, action.color);
       btn.addEventListener('click', function () {
         runAction(action, payload);
       });
@@ -505,6 +563,7 @@
     (payload.actions || []).forEach(function (action) {
       var btn = h.el('button', 'notify-btn notify-btn--' + (action.style || 'secondary'), h.escapeHtml(action.label));
       btn.type = 'button';
+      h.actionColor(btn, action.color);
       btn.addEventListener('click', function () { h.runAction(action, payload); });
       buttons.appendChild(btn);
     });
@@ -648,13 +707,14 @@
       options = options || {};
       var id = uuid();
       var actions = [
-        { label: options.cancelText || STRINGS.cancel, style: 'secondary', target: null, closesDialog: true },
+        { label: options.cancelText || STRINGS.cancel, style: 'secondary', target: null, closesDialog: true, color: normalizeColor(options.cancelColor) },
       ];
       actions.push({
         label: options.confirmText || STRINGS.confirm,
         style: options.danger ? 'danger' : 'primary',
         target: options.onConfirm ? { type: 'js', run: options.onConfirm } : null,
         closesDialog: true,
+        color: normalizeColor(options.confirmColor),
       });
 
       ingest({
@@ -750,6 +810,22 @@
     getColorScheme: function () {
       return document.documentElement.getAttribute('data-notify-theme') || 'system';
     },
+    /**
+     * Sets the color of every button rendered with a given style, globally,
+     * without writing CSS — pass only the styles you want to change:
+     *
+     *   Notify.setButtonColors({
+     *     primary: { bg: '#7c3aed', fg: '#fff' },
+     *     danger: { bg: '#dc2626' },
+     *   });
+     *
+     * A single button can still override this on its own regardless — pass a
+     * color to ->action()/->confirmColor()/->cancelColor() (PHP) or
+     * Notify.confirm({ confirmColor, cancelColor }) (JS).
+     */
+    setButtonColors: function (colors) {
+      applyButtonColors(colors);
+    },
   };
 
   window.notifyAction = function ($wire, method, params, messages) {
@@ -768,6 +844,7 @@
 
   function boot() {
     initColorScheme();
+    applyButtonColors(CFG.buttonColors);
 
     (window.__NOTIFY_QUEUE__ || []).forEach(ingest);
 

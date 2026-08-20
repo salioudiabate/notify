@@ -155,17 +155,23 @@ abstract class NotificationBuilder
      *                                       trait), or a Closure executed
      *                                       server-side through a signed,
      *                                       single-use callback URL.
+     * @param  string|array|null  $color  One-off override for this button
+     *                                    only — a color string (background),
+     *                                    or ['bg' => ..., 'fg' => ..., 'border' => ...].
+     *                                    Leave null to use whatever
+     *                                    config('notify.button_colors')/
+     *                                    Notify.setButtonColors() set for $style.
      */
-    public function action(string $label, string|Closure|null $target = null, string $style = 'ghost'): static
+    public function action(string $label, string|Closure|null $target = null, string $style = 'ghost', string|array|null $color = null): static
     {
-        $this->actions[] = new Action($label, $style, $this->resolveTarget($target));
+        $this->actions[] = new Action($label, $style, $this->resolveTarget($target), color: $color);
 
         return $this;
     }
 
-    public function url(string $url, ?string $label = null): static
+    public function url(string $url, ?string $label = null, string|array|null $color = null): static
     {
-        return $this->action($label ?? (string) config('notify.strings.url', 'Voir'), $url, 'link');
+        return $this->action($label ?? (string) config('notify.strings.url', 'Voir'), $url, 'link', $color);
     }
 
     /** @internal set by InteractsWithNotifications — not part of the public fluent API */

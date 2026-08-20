@@ -34,7 +34,7 @@ $import->success('Import terminé.');
   - [Pure client-side JS](#pure-client-side-js)
 - [API](#api)
 - [Custom templates](#custom-templates)
-- [Icons & text](#icons--text)
+- [Icons, text & button colors](#icons-text--button-colors)
 - [Light & dark mode](#light--dark-mode)
 - [Confirmations & server actions](#confirmations--server-actions)
 - [Existing `->with('success', ...)` calls, validation & exceptions](#existing---withsuccess--calls-validation--exceptions)
@@ -223,6 +223,7 @@ Notify.registerTemplate('brand', {
 | `h.escapeHtml(value)` | HTML-escape a string |
 | `h.icon(payload)` | Resolve the semantic icon markup for a variant |
 | `h.actions(payload)` | Build the action-button row, already wired to `h.runAction` |
+| `h.actionColor(button, color)` | Apply a per-button color override (string or `{bg,fg,border}`) to an element |
 | `h.runAction(action, payload)` | Execute one action's target (url/route/Livewire/callback) and dismiss |
 | `h.dismiss(id)` | Remove a notification by id |
 
@@ -240,9 +241,9 @@ Notify::toast()->success()->title('Fait')->message('...')->template('brand')->se
 
 A `dialog` template handles both `confirm()` and `dialog()` payloads — it only needs to return the box itself; the backdrop, Esc-to-close, focus and queueing when a second dialog is requested while one is already open all stay in the package, since that's shared interaction plumbing rather than something a design should have to reimplement.
 
-## Icons & text
+## Icons, text & button colors
 
-Registering a whole template is the nuclear option — for smaller changes, icons and every piece of built-in UI chrome text are customizable on their own, without writing a single template function.
+Registering a whole template is the nuclear option — for smaller changes, icons, every piece of built-in UI chrome text, and button colors are all customizable on their own, without writing a single template function.
 
 **Icons.** `->icon('name')` looks up a registry of built-in icons (`success`, `error`, `warning`, `info`, `neutral`, `trash`, `close`). Override one, several, or add new ones, globally:
 
@@ -292,6 +293,44 @@ Notify.setStrings({
 ```
 
 `ConfirmBuilder`'s default `->confirmText()`/`->cancelText()` and `->url()`'s default label read from these same `config('notify.strings.*')` keys server-side, so a single config change relabels both the PHP-built payloads and the pure-JS `Notify.confirm()` path consistently.
+
+**Button colors.** Every button style (`primary`, `secondary`, `danger`, `ghost`, `link` — the same names `->action()`'s third argument accepts) has its own color, decoupled from card text/icon colors, so changing one never affects the other. Override one or more styles globally:
+
+```js
+Notify.setButtonColors({
+    primary: { bg: '#7c3aed', fg: '#fff' },
+    danger: { bg: '#dc2626' },
+});
+```
+
+```php
+// config/notify.php — same effect, applied server-side
+'button_colors' => [
+    'primary' => ['bg' => '#7c3aed', 'fg' => '#ffffff'],
+],
+```
+
+Each style accepts `bg` (required to have any effect), plus optional `fg` (text) and `border`. Leave a style out to keep its built-in look.
+
+A single button can go its own way regardless of the global setting — every button-producing method accepts an optional color, a plain string (background only) or a `['bg' => ..., 'fg' => ..., 'border' => ...]` array:
+
+```php
+Notify::toast()->success()->message('Done.')->action('Undo', fn () => $this->undo(), 'primary', '#7c3aed')->send();
+
+Notify::confirm('Delete this?')
+    ->confirmColor(['bg' => '#dc2626', 'fg' => '#fff'])
+    ->cancelColor('#e5e7eb')
+    ->onConfirm(fn () => $this->delete())
+    ->send();
+```
+
+```js
+Notify.confirm({
+    title: 'Delete this?',
+    confirmColor: '#dc2626',
+    onConfirm: () => fetch('/delete', { method: 'POST' }),
+});
+```
 
 ## Light & dark mode
 

@@ -16,6 +16,12 @@ final class Action
         public string $style = 'ghost', // primary | secondary | danger | ghost | link
         public ?array $target = null,   // ['type' => 'url'|'livewire'|'callback', ...]
         public bool $closesDialog = true,
+        /** One-off override of this button's color, on top of whatever
+         *  config('notify.button_colors')/Notify.setButtonColors() already set
+         *  for its style — a plain color string sets the background only
+         *  (e.g. '#7c3aed'), or pass ['bg' => ..., 'fg' => ..., 'border' => ...]
+         *  for full control. */
+        public string|array|null $color = null,
     ) {}
 
     public static function url(string $label, string $url, string $style = 'ghost'): self
@@ -45,6 +51,7 @@ final class Action
             'style' => $this->style,
             'target' => $this->target,
             'closesDialog' => $this->closesDialog,
+            'color' => is_string($this->color) ? ['bg' => $this->color] : $this->color,
         ];
     }
 }

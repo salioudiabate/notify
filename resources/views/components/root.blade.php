@@ -70,6 +70,7 @@
         'colorScheme' => config('notify.color_scheme'),
         'icons' => config('notify.icons', []),
         'strings' => config('notify.strings', []),
+        'buttonColors' => config('notify.button_colors', []),
     ];
     $notifyJsQueue = array_values($queue);
 @endphp

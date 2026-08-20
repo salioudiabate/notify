@@ -85,6 +85,27 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Button colors
+    |--------------------------------------------------------------------------
+    |
+    | Overrides the color of every button rendered with a given style
+    | (primary/secondary/danger/ghost/link — the same names ->action()'s third
+    | argument accepts), globally, without writing any CSS. Same effect as
+    | Notify.setButtonColors() client-side. A single button can still go its
+    | own way regardless of this: pass a color straight to that one call
+    | (->action($label, $target, $style, '#7c3aed'), ->confirmColor(), ...).
+    |
+    | Each style accepts 'bg' (required to have any effect), plus optional
+    | 'fg' (text) and 'border'. Leave a style out entirely to keep its
+    | built-in look.
+    |
+    */
+    'button_colors' => [
+        // 'primary' => ['bg' => '#7c3aed', 'fg' => '#ffffff'],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Text / copy
     |--------------------------------------------------------------------------
     |

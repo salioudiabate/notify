@@ -43,6 +43,18 @@ it('custom confirmText()/cancelText() relabel the two buttons', function () {
         ->and($actions[1]['label'])->toBe('Supprimer');
 });
 
+it('confirmColor()/cancelColor() attach a one-off color override to each button only', function () {
+    Notify::confirm('Titre', 'Message')
+        ->confirmColor(['bg' => '#7c3aed', 'fg' => '#fff'])
+        ->cancelColor('#e5e7eb')
+        ->send();
+
+    $actions = lastQueuedPayload()['actions'];
+
+    expect($actions[0]['color'])->toBe(['bg' => '#e5e7eb'])
+        ->and($actions[1]['color'])->toBe(['bg' => '#7c3aed', 'fg' => '#fff']);
+});
+
 it('onConfirm() with a named route resolves the confirm action to that route\'s URL', function () {
     // 'clients.show' is registered once for every test, in TestCase::defineRoutes()
     Notify::confirm('Titre')->onConfirm('clients.show', ['client' => 42])->send();

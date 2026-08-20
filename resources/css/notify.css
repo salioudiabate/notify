@@ -46,6 +46,27 @@
   --notify-shadow-card: 0 1px 2px rgba(11,11,20,.08);
   --notify-shadow-toast: 0 10px 28px -6px rgba(11,11,20,.14), 0 2px 6px -2px rgba(11,11,20,.08);
   --notify-shadow-dialog: 0 24px 48px -12px rgba(11,11,20,.18), 0 4px 12px -4px rgba(11,11,20,.08);
+
+  /*
+   * Dedicated per-style button tokens — deliberately their own variables
+   * (not reused text/error tokens) so overriding a button's color, via
+   * config('notify.button_colors')/Notify.setButtonColors() or a plain CSS
+   * override, never also changes card text or semantic icon colors. Default
+   * values reference the tokens above, so they still track the light/dark
+   * palette automatically without needing to be redefined in every
+   * color-scheme block below.
+   */
+  --notify-btn-primary-bg: var(--notify-text-1);
+  --notify-btn-primary-fg: var(--notify-canvas);
+  --notify-btn-secondary-bg: var(--notify-surface);
+  --notify-btn-secondary-fg: var(--notify-text-1);
+  --notify-btn-secondary-border: var(--notify-border-2);
+  --notify-btn-danger-bg: var(--notify-error);
+  --notify-btn-danger-fg: #ffffff;
+  --notify-btn-ghost-bg: var(--notify-surface-2);
+  --notify-btn-ghost-fg: var(--notify-text-1);
+  --notify-btn-ghost-border: var(--notify-border);
+  --notify-btn-link-fg: var(--notify-info-fg);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -216,11 +237,11 @@
 /* ---------- buttons ---------- */
 
 .notify-btn { font: inherit; font-size: 13px; font-weight: 500; border-radius: var(--notify-r-sm); padding: 6px 10px; border: 1px solid transparent; cursor: pointer; }
-.notify-btn--primary   { background: var(--notify-text-1); color: var(--notify-canvas); box-shadow: var(--notify-shadow-card); border-radius: var(--notify-r-md); padding: 9px 15px; font-size: 14px; }
-.notify-btn--secondary { background: var(--notify-surface); color: var(--notify-text-1); border-color: var(--notify-border-2); box-shadow: var(--notify-shadow-card); border-radius: var(--notify-r-md); padding: 9px 15px; font-size: 14px; }
-.notify-btn--danger    { background: var(--notify-error); color: #fff; box-shadow: var(--notify-shadow-card); border-radius: var(--notify-r-md); padding: 9px 15px; font-size: 14px; }
-.notify-btn--ghost     { background: var(--notify-surface-2); color: var(--notify-text-1); border-color: var(--notify-border); }
-.notify-btn--link      { background: transparent; color: var(--notify-info-fg); padding: 2px 0; font-weight: 600; }
+.notify-btn--primary   { background: var(--notify-btn-primary-bg); color: var(--notify-btn-primary-fg); box-shadow: var(--notify-shadow-card); border-radius: var(--notify-r-md); padding: 9px 15px; font-size: 14px; }
+.notify-btn--secondary { background: var(--notify-btn-secondary-bg); color: var(--notify-btn-secondary-fg); border-color: var(--notify-btn-secondary-border); box-shadow: var(--notify-shadow-card); border-radius: var(--notify-r-md); padding: 9px 15px; font-size: 14px; }
+.notify-btn--danger    { background: var(--notify-btn-danger-bg); color: var(--notify-btn-danger-fg); box-shadow: var(--notify-shadow-card); border-radius: var(--notify-r-md); padding: 9px 15px; font-size: 14px; }
+.notify-btn--ghost     { background: var(--notify-btn-ghost-bg); color: var(--notify-btn-ghost-fg); border-color: var(--notify-btn-ghost-border); }
+.notify-btn--link      { background: transparent; color: var(--notify-btn-link-fg); padding: 2px 0; font-weight: 600; }
 
 /* ---------- dialog / confirm ---------- */
 

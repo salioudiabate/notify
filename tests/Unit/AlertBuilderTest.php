@@ -17,8 +17,14 @@ it('button() adds a single primary, target-less action', function () {
     Notify::alert()->warning()->message('...')->button('Compris')->send();
 
     expect(lastQueuedPayload()['actions'])->toBe([
-        ['label' => 'Compris', 'style' => 'primary', 'target' => null, 'closesDialog' => true],
+        ['label' => 'Compris', 'style' => 'primary', 'target' => null, 'closesDialog' => true, 'color' => null],
     ]);
+});
+
+it('button() accepts a one-off color override, same as action()', function () {
+    Notify::alert()->warning()->message('...')->button('Compris', '#7c3aed')->send();
+
+    expect(lastQueuedPayload()['actions'][0]['color'])->toBe(['bg' => '#7c3aed']);
 });
 
 it('combines button() with a regular action() for a persistent-banner-style pair', function () {

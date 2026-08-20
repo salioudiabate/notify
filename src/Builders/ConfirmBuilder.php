@@ -21,6 +21,10 @@ final class ConfirmBuilder extends NotificationBuilder
 
     private bool $danger = false;
 
+    private string|array|null $confirmColor = null;
+
+    private string|array|null $cancelColor = null;
+
     private string|Closure|null $onConfirm = null;
 
     private array $onConfirmParams = [];
@@ -63,6 +67,24 @@ final class ConfirmBuilder extends NotificationBuilder
         return $this;
     }
 
+    /** One-off override for this dialog's confirm button only — a color
+     *  string (background), or ['bg' => ..., 'fg' => ..., 'border' => ...].
+     *  Leave unset to use config('notify.button_colors')/Notify.setButtonColors(). */
+    public function confirmColor(string|array $color): static
+    {
+        $this->confirmColor = $color;
+
+        return $this;
+    }
+
+    /** Same as confirmColor(), for the cancel button. */
+    public function cancelColor(string|array $color): static
+    {
+        $this->cancelColor = $color;
+
+        return $this;
+    }
+
     /**
      * @param  string|Closure  $action  A route name, a plain URL, a Livewire
      *                                  method name (resolved automatically
@@ -84,11 +106,12 @@ final class ConfirmBuilder extends NotificationBuilder
     protected function toPayload(): NotificationPayload
     {
         $this->actions = [
-            new Action($this->cancelText, 'secondary'),
+            new Action($this->cancelText, 'secondary', color: $this->cancelColor),
             new Action(
                 $this->confirmText,
                 $this->danger ? 'danger' : 'primary',
-                $this->resolveTarget($this->onConfirm, $this->onConfirmParams)
+                $this->resolveTarget($this->onConfirm, $this->onConfirmParams),
+                color: $this->confirmColor,
             ),
         ];
 

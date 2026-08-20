@@ -23,10 +23,11 @@ it('embeds config(notify.color_scheme) and the other JS config values in the ren
         ->not->toContain('data-notify-position'); // dead attribute, removed — position is per-stack now
 });
 
-it('embeds config(notify.icons) and config(notify.strings) so the JS runtime can merge them at boot', function () {
+it('embeds config(notify.icons), config(notify.strings) and config(notify.button_colors) so the JS runtime can merge them at boot', function () {
     config([
         'notify.icons' => ['success' => '<svg data-mine></svg>'],
         'notify.strings' => ['close' => 'Close', 'confirm' => 'Yes'],
+        'notify.button_colors' => ['primary' => ['bg' => '#7c3aed', 'fg' => '#fff']],
     ]);
 
     $html = (string) view('notify::components.root')->render();
@@ -36,7 +37,8 @@ it('embeds config(notify.icons) and config(notify.strings) so the JS runtime can
     $jsConfig = json_decode(Str::before(Str::after($html, 'window.__NOTIFY_CONFIG__ = '), ';'), true);
 
     expect($jsConfig['icons'])->toBe(['success' => '<svg data-mine></svg>'])
-        ->and($jsConfig['strings'])->toBe(['close' => 'Close', 'confirm' => 'Yes']);
+        ->and($jsConfig['strings'])->toBe(['close' => 'Close', 'confirm' => 'Yes'])
+        ->and($jsConfig['buttonColors'])->toBe(['primary' => ['bg' => '#7c3aed', 'fg' => '#fff']]);
 });
 
 function renderedQueue(): array
