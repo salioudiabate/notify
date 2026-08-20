@@ -41,12 +41,18 @@ final class NotifyServiceProvider extends PackageServiceProvider
             }
 
             if (config('notify.assets.serve', true)) {
+                // no-cache (not no-store): the browser still validates every
+                // time via the file's Last-Modified/ETag, so an edit during
+                // active development is never masked by a silently-stale
+                // heuristic cache — a 304 round trip is negligible either way.
+                $assetHeaders = ['Cache-Control' => 'no-cache, must-revalidate', 'Pragma' => 'no-cache'];
+
                 Route::get('/notify/notify.js', fn () => response()
-                    ->file(__DIR__.'/../resources/js/notify.js', ['Content-Type' => 'application/javascript; charset=utf-8']))
+                    ->file(__DIR__.'/../resources/js/notify.js', $assetHeaders + ['Content-Type' => 'application/javascript; charset=utf-8']))
                     ->name('notify.assets.js');
 
                 Route::get('/notify/notify.css', fn () => response()
-                    ->file(__DIR__.'/../resources/css/notify.css', ['Content-Type' => 'text/css; charset=utf-8']))
+                    ->file(__DIR__.'/../resources/css/notify.css', $assetHeaders + ['Content-Type' => 'text/css; charset=utf-8']))
                     ->name('notify.assets.css');
             }
         });

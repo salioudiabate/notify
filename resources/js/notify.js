@@ -615,14 +615,18 @@
   function boot() {
     (window.__NOTIFY_QUEUE__ || []).forEach(ingest);
 
+    // Livewire's dispatch(name, notification: $payload) delivers named
+    // arguments to JS as ONE object keyed by their names — { notification }
+    // here, { group } for clear-group — never the bare payload itself.
+    function bindLivewire() {
+      window.Livewire.on('notify:push', function (e) { ingest(e.notification); });
+      window.Livewire.on('notify:clear-group', function (e) { clearGroup(e.group); });
+    }
+
     if (window.Livewire) {
-      window.Livewire.on('notify:push', ingest);
-      window.Livewire.on('notify:clear-group', function (payload) { clearGroup(payload.group); });
+      bindLivewire();
     } else {
-      document.addEventListener('livewire:init', function () {
-        window.Livewire.on('notify:push', ingest);
-        window.Livewire.on('notify:clear-group', function (payload) { clearGroup(payload.group); });
-      });
+      document.addEventListener('livewire:init', bindLivewire);
     }
   }
 
