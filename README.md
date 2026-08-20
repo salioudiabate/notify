@@ -34,6 +34,7 @@ $import->success('Import terminé.');
   - [Pure client-side JS](#pure-client-side-js)
 - [API](#api)
 - [Custom templates](#custom-templates)
+- [Icons & text](#icons--text)
 - [Light & dark mode](#light--dark-mode)
 - [Confirmations & server actions](#confirmations--server-actions)
 - [Existing `->with('success', ...)` calls, validation & exceptions](#existing---withsuccess--calls-validation--exceptions)
@@ -238,6 +239,59 @@ Notify::toast()->success()->title('Fait')->message('...')->template('brand')->se
 ```
 
 A `dialog` template handles both `confirm()` and `dialog()` payloads — it only needs to return the box itself; the backdrop, Esc-to-close, focus and queueing when a second dialog is requested while one is already open all stay in the package, since that's shared interaction plumbing rather than something a design should have to reimplement.
+
+## Icons & text
+
+Registering a whole template is the nuclear option — for smaller changes, icons and every piece of built-in UI chrome text are customizable on their own, without writing a single template function.
+
+**Icons.** `->icon('name')` looks up a registry of built-in icons (`success`, `error`, `warning`, `info`, `neutral`, `trash`, `close`). Override one, several, or add new ones, globally:
+
+```js
+Notify.registerIcon('success', '<svg>...</svg>');
+Notify.registerIcon({ success: '<svg>...</svg>', error: '<svg>...</svg>' }); // several at once
+```
+
+```php
+// config/notify.php — same effect, applied server-side, no inline <script> needed
+'icons' => [
+    'success' => '<svg>...</svg>',
+],
+```
+
+A one-off icon that isn't worth registering anywhere doesn't need either of those — pass raw markup straight to the call:
+
+```php
+Notify::success('Done.')->icon('<svg>...</svg>')->send();
+```
+
+**Text.** Every hardcoded piece of UI chrome — the close button's label, the "N more" overflow pill, the dialog's `Esc to close` hint, and `confirm()`/`cancel()`'s default button labels — is *not* part of any payload's own free-form title/message/action text (already customizable per call); it lives in one place so a translated or reworded app only has to set it once:
+
+```js
+Notify.setStrings({
+    close: 'Close',
+    moreSingular: 'more notification',
+    morePlural: 'more notifications',
+    escKey: 'Esc',
+    escHint: 'to close',
+    confirm: 'Confirm',
+    cancel: 'Cancel',
+    url: 'View',
+    actionSuccess: 'Done.',
+    actionError: 'Something went wrong.',
+});
+```
+
+```php
+// config/notify.php — same keys, applied globally without a <script> tag;
+// leave any key out to keep its built-in French default
+'strings' => [
+    'close' => 'Close',
+    'confirm' => 'Confirm',
+    'cancel' => 'Cancel',
+],
+```
+
+`ConfirmBuilder`'s default `->confirmText()`/`->cancelText()` and `->url()`'s default label read from these same `config('notify.strings.*')` keys server-side, so a single config change relabels both the PHP-built payloads and the pure-JS `Notify.confirm()` path consistently.
 
 ## Light & dark mode
 

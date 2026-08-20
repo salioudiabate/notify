@@ -68,6 +68,8 @@
         'animations' => config('notify.animations', true),
         'theme' => config('notify.theme'),
         'colorScheme' => config('notify.color_scheme'),
+        'icons' => config('notify.icons', []),
+        'strings' => config('notify.strings', []),
     ];
     $notifyJsQueue = array_values($queue);
 @endphp

@@ -163,9 +163,9 @@ abstract class NotificationBuilder
         return $this;
     }
 
-    public function url(string $url, string $label = 'Voir'): static
+    public function url(string $url, ?string $label = null): static
     {
-        return $this->action($label, $url, 'link');
+        return $this->action($label ?? (string) config('notify.strings.url', 'Voir'), $url, 'link');
     }
 
     /** @internal set by InteractsWithNotifications — not part of the public fluent API */

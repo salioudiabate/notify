@@ -16,6 +16,17 @@ it('defaults to Annuler/Confirmer and renders exactly a Cancel + Confirm pair', 
         ->and($actions[1])->toMatchArray(['label' => 'Confirmer', 'style' => 'primary']);
 });
 
+it('config(notify.strings.confirm/cancel) overrides the default labels globally', function () {
+    config(['notify.strings' => ['confirm' => 'Supprimer définitivement', 'cancel' => 'Non merci']]);
+
+    Notify::confirm('Titre', 'Message')->send();
+
+    $actions = lastQueuedPayload()['actions'];
+
+    expect($actions[0]['label'])->toBe('Non merci')
+        ->and($actions[1]['label'])->toBe('Supprimer définitivement');
+});
+
 it('danger() switches the variant to error and the confirm button style to danger', function () {
     Notify::confirm('Titre', 'Message')->danger()->send();
 

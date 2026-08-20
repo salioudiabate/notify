@@ -68,6 +68,48 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Icons
+    |--------------------------------------------------------------------------
+    |
+    | Overrides the built-in SVG for any named icon (success, error, warning,
+    | info, neutral, trash, close) or registers new ones, globally, without an
+    | inline <script> — same registry ->icon('name') looks up and the same
+    | effect as calling Notify.registerIcon() in JS. A one-off icon doesn't
+    | need registering at all: pass raw markup straight to a single
+    | notification with ->icon('<svg>...</svg>').
+    |
+    */
+    'icons' => [
+        // 'success' => '<svg ...></svg>',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Text / copy
+    |--------------------------------------------------------------------------
+    |
+    | Every hardcoded piece of UI chrome text — never a payload's own free-form
+    | title/message/action labels, which are already fully customizable per
+    | call — lives here, so it can be translated or reworded globally without
+    | touching the JS. Same keys as Notify.setStrings() client-side; anything
+    | left unset keeps its built-in French default.
+    |
+    */
+    'strings' => [
+        // 'close' => 'Close',
+        // 'moreSingular' => 'more notification',
+        // 'morePlural' => 'more notifications',
+        // 'escKey' => 'Esc',
+        // 'escHint' => 'to close',
+        // 'confirm' => 'Confirm',
+        // 'cancel' => 'Cancel',
+        // 'url' => 'View',
+        // 'actionSuccess' => 'Done.',
+        // 'actionError' => 'Something went wrong.',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Session flash bridge
     |--------------------------------------------------------------------------
     |

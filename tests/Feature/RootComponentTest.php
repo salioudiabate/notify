@@ -23,6 +23,22 @@ it('embeds config(notify.color_scheme) and the other JS config values in the ren
         ->not->toContain('data-notify-position'); // dead attribute, removed — position is per-stack now
 });
 
+it('embeds config(notify.icons) and config(notify.strings) so the JS runtime can merge them at boot', function () {
+    config([
+        'notify.icons' => ['success' => '<svg data-mine></svg>'],
+        'notify.strings' => ['close' => 'Close', 'confirm' => 'Yes'],
+    ]);
+
+    $html = (string) view('notify::components.root')->render();
+    // Str::between() takes the *last* occurrence of the end delimiter, which
+    // would swallow the following window.__NOTIFY_QUEUE__ = [...]; line too
+    // (both end in ';') — Str::before(Str::after(...)) stops at the first one.
+    $jsConfig = json_decode(Str::before(Str::after($html, 'window.__NOTIFY_CONFIG__ = '), ';'), true);
+
+    expect($jsConfig['icons'])->toBe(['success' => '<svg data-mine></svg>'])
+        ->and($jsConfig['strings'])->toBe(['close' => 'Close', 'confirm' => 'Yes']);
+});
+
 function renderedQueue(): array
 {
     $html = (string) view('notify::components.root')->render();

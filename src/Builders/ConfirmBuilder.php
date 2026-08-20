@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Salioudiabate\Notify\Builders;
 
 use Closure;
+use Salioudiabate\Notify\NotifyManager;
 use Salioudiabate\Notify\Support\Action;
 use Salioudiabate\Notify\Support\NotificationPayload;
 
@@ -14,15 +15,26 @@ use Salioudiabate\Notify\Support\NotificationPayload;
  */
 final class ConfirmBuilder extends NotificationBuilder
 {
-    private string $confirmText = 'Confirmer';
+    private string $confirmText;
 
-    private string $cancelText = 'Annuler';
+    private string $cancelText;
 
     private bool $danger = false;
 
     private string|Closure|null $onConfirm = null;
 
     private array $onConfirmParams = [];
+
+    public function __construct(NotifyManager $manager)
+    {
+        parent::__construct($manager);
+
+        // Default labels come from config('notify.strings') so a translated
+        // app only has to set them once — ->confirmText()/->cancelText() still
+        // override per call, same as before.
+        $this->confirmText = (string) config('notify.strings.confirm', 'Confirmer');
+        $this->cancelText = (string) config('notify.strings.cancel', 'Annuler');
+    }
 
     protected function type(): string
     {

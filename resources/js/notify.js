@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  var CFG = window.__NOTIFY_CONFIG__ || { position: 'top-right', maxVisible: 4, dismissible: true, animations: true, colorScheme: null };
+  var CFG = window.__NOTIFY_CONFIG__ || { position: 'top-right', maxVisible: 4, dismissible: true, animations: true, colorScheme: null, icons: {}, strings: {} };
 
   /** @type {Array<object>} every currently-tracked payload, rendered or queued behind max_visible */
   var items = [];
@@ -101,13 +101,60 @@
     close: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6 6 18" stroke-linecap="round"/></svg>',
   };
 
+  // config('notify.icons') / Notify.registerIcon() overrides applied once at
+  // boot, on top of the built-ins above — same registry ->icon('name') looks up.
+  mergeIcons(CFG.icons);
+
+  function mergeIcons(overrides) {
+    Object.keys(overrides || {}).forEach(function (name) { ICONS[name] = overrides[name]; });
+  }
+
   function iconMarkup(payload) {
     if (payload.variant === 'loading') {
       return '<span class="notify-spinner"></span>';
     }
 
-    return ICONS[payload.icon] || ICONS[payload.variant] || ICONS.neutral;
+    if (payload.icon && ICONS[payload.icon]) {
+      return ICONS[payload.icon];
+    }
+
+    // Not a registered name: treat it as raw markup handed straight to
+    // ->icon('<svg>...</svg>') — a one-off custom icon with nothing to
+    // register up front. Trusted, developer-authored content, same as
+    // every built-in ICONS entry above (already inserted via innerHTML).
+    if (payload.icon && /^\s*</.test(payload.icon)) {
+      return payload.icon;
+    }
+
+    return ICONS[payload.variant] || ICONS.neutral;
   }
+
+  // --------------------------------------------------------------- strings --
+
+  /**
+   * Every hardcoded piece of UI chrome text that isn't part of a payload's
+   * own free-form title/message/action labels (already customizable per
+   * call). Override globally via config('notify.strings') or Notify.setStrings(),
+   * or leave any key out to keep its built-in default.
+   */
+  var STRINGS = {
+    close: 'Fermer',
+    moreSingular: 'notification de plus',
+    morePlural: 'notifications de plus',
+    escKey: 'Esc',
+    escHint: 'pour fermer',
+    confirm: 'Confirmer',
+    cancel: 'Annuler',
+    url: 'Voir',
+    actionSuccess: 'Terminé.',
+    actionError: 'Une erreur est survenue.',
+  };
+
+  function mergeStrings(overrides) {
+    Object.keys(overrides || {}).forEach(function (key) { STRINGS[key] = overrides[key]; });
+  }
+
+  mergeStrings(CFG.strings);
 
   // ------------------------------------------------------------- security --
 
@@ -223,7 +270,7 @@
     if (payload.dismissible !== false) {
       var close = el('button', 'notify-card__close', ICONS.close);
       close.type = 'button';
-      close.setAttribute('aria-label', 'Fermer');
+      close.setAttribute('aria-label', STRINGS.close);
       close.addEventListener('click', function () { dismiss(payload.id); });
       body.appendChild(close);
     }
@@ -265,6 +312,7 @@
     if (payload.dismissible !== false) {
       var close = el('button', 'notify-card__close', ICONS.close);
       close.type = 'button';
+      close.setAttribute('aria-label', STRINGS.close);
       close.addEventListener('click', function () { dismiss(payload.id); });
       card.appendChild(close);
     }
@@ -329,7 +377,7 @@
     if (pill) pill.remove();
 
     if (hidden > 0) {
-      var text = hidden + (hidden > 1 ? ' notifications de plus' : ' notification de plus');
+      var text = hidden + ' ' + (hidden > 1 ? STRINGS.morePlural : STRINGS.moreSingular);
       stack.appendChild(el('div', 'notify-more', text));
     }
   }
@@ -450,7 +498,7 @@
 
     var footer = h.el('div', 'notify-dialog__footer');
     if (!(payload.meta && payload.meta.centered)) {
-      footer.appendChild(h.el('div', 'notify-kbd', '<span>Esc</span> pour fermer'));
+      footer.appendChild(h.el('div', 'notify-kbd', '<span>' + h.escapeHtml(STRINGS.escKey) + '</span> ' + h.escapeHtml(STRINGS.escHint)));
     }
 
     var buttons = h.el('div', 'notify-card__actions');
@@ -600,10 +648,10 @@
       options = options || {};
       var id = uuid();
       var actions = [
-        { label: options.cancelText || 'Annuler', style: 'secondary', target: null, closesDialog: true },
+        { label: options.cancelText || STRINGS.cancel, style: 'secondary', target: null, closesDialog: true },
       ];
       actions.push({
-        label: options.confirmText || 'Confirmer',
+        label: options.confirmText || STRINGS.confirm,
         style: options.danger ? 'danger' : 'primary',
         target: options.onConfirm ? { type: 'js', run: options.onConfirm } : null,
         closesDialog: true,
@@ -639,6 +687,39 @@
      */
     registerTemplate: function (name, handlers) {
       templates[name] = handlers || {};
+    },
+    /**
+     * Overrides (or adds) one or more named icons, on top of the built-ins
+     * (success, error, warning, info, neutral, trash, close) — same registry
+     * ->icon('name') looks up. Takes either a name + SVG markup pair, or a
+     * whole map at once:
+     *
+     *   Notify.registerIcon('success', '<svg>...</svg>');
+     *   Notify.registerIcon({ success: '<svg>...</svg>', error: '<svg>...</svg>' });
+     *
+     * For a one-off icon that isn't worth registering, skip this entirely and
+     * pass the markup straight to a single notification instead:
+     * ->icon('<svg>...</svg>').
+     */
+    registerIcon: function (name, svg) {
+      if (name && typeof name === 'object') {
+        mergeIcons(name);
+      } else {
+        ICONS[name] = svg;
+      }
+    },
+    /**
+     * Overrides one or more built-in UI chrome strings (close button label,
+     * the "N more" pill, the dialog's Esc hint, confirm()/cancel() defaults,
+     * notifyAction()'s fallback messages — never a payload's own free-form
+     * title/message/action labels, which are already customizable per call).
+     * Same keys as config('notify.strings'); anything left out keeps its
+     * built-in French default:
+     *
+     *   Notify.setStrings({ close: 'Close', confirm: 'Confirm', cancel: 'Cancel' });
+     */
+    setStrings: function (overrides) {
+      mergeStrings(overrides);
     },
     /**
      * Notify.setColorScheme('dark' | 'light' | 'system') — forces the
@@ -677,9 +758,9 @@
     var result = $wire.call.apply($wire, [method].concat(params || []));
 
     Promise.resolve(result).then(function () {
-      pending.success(messages.success || 'Terminé.');
+      pending.success(messages.success || STRINGS.actionSuccess);
     }).catch(function () {
-      pending.error(messages.error || 'Une erreur est survenue.');
+      pending.error(messages.error || STRINGS.actionError);
     });
   };
 

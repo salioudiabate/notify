@@ -38,3 +38,18 @@ it('error toasts default to no auto-dismiss duration, per config', function () {
 
     expect(lastQueuedPayload()['duration'])->toBeNull();
 });
+
+it('url() defaults its label to "Voir", overridable per call or globally via config(notify.strings.url)', function () {
+    Notify::toast()->success()->message('ok')->url('/somewhere')->send();
+
+    expect(lastQueuedPayload()['actions'][0])->toMatchArray(['label' => 'Voir', 'style' => 'link']);
+
+    Notify::toast()->success()->message('ok')->url('/somewhere', 'Voir le détail')->send();
+
+    expect(lastQueuedPayload()['actions'][0]['label'])->toBe('Voir le détail');
+
+    config(['notify.strings' => ['url' => 'Ouvrir']]);
+    Notify::toast()->success()->message('ok')->url('/somewhere')->send();
+
+    expect(lastQueuedPayload()['actions'][0]['label'])->toBe('Ouvrir');
+});
