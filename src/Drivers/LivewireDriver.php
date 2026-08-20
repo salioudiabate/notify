@@ -19,9 +19,7 @@ use Salioudiabate\Notify\Support\NotificationPayload;
  */
 final class LivewireDriver implements NotificationDriver
 {
-    public function __construct(protected Component $component)
-    {
-    }
+    public function __construct(protected Component $component) {}
 
     public function push(NotificationPayload $payload): void
     {

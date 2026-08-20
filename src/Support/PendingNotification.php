@@ -21,8 +21,7 @@ final class PendingNotification
         private readonly NotifyManager $manager,
         private readonly string $id,
         private readonly ?object $component = null,
-    ) {
-    }
+    ) {}
 
     public function id(): string
     {

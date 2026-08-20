@@ -17,9 +17,7 @@ use Salioudiabate\Notify\Support\NotificationPayload;
  */
 final class SessionDriver implements NotificationDriver
 {
-    public function __construct(protected Session $session)
-    {
-    }
+    public function __construct(protected Session $session) {}
 
     public function push(NotificationPayload $payload): void
     {

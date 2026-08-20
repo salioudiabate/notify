@@ -32,8 +32,7 @@ final class NotificationPayload implements Arrayable, JsonSerializable
         public array $meta = [],
         public bool $replace = false,
         public ?string $template = null,
-    ) {
-    }
+    ) {}
 
     public function toArray(): array
     {

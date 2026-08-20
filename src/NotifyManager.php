@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Salioudiabate\Notify;
 
 use Illuminate\Contracts\Container\Container;
+use Livewire\Component;
 use Salioudiabate\Notify\Builders\AlertBuilder;
 use Salioudiabate\Notify\Builders\ConfirmBuilder;
 use Salioudiabate\Notify\Builders\DialogBuilder;
@@ -26,9 +27,7 @@ use Salioudiabate\Notify\Support\PendingNotification;
  */
 final class NotifyManager
 {
-    public function __construct(private readonly Container $container)
-    {
-    }
+    public function __construct(private readonly Container $container) {}
 
     public function toast(): ToastBuilder
     {
@@ -117,7 +116,7 @@ final class NotifyManager
      * that needs a guaranteed target should call $this->notify(...) instead,
      * which always attaches to itself explicitly.
      */
-    public function registerLivewireComponent(\Livewire\Component $component): void
+    public function registerLivewireComponent(Component $component): void
     {
         $this->container->instance('notify.livewire.active', $component);
     }

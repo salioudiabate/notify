@@ -1,0 +1,13 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    paths:
+        - src
+
+    level: 5
+
+    ignoreErrors:
+        # InteractsWithNotifications is meant to be `use`n by consumer
+        # Livewire components, never anything inside this package itself.
+        - identifier: trait.unused

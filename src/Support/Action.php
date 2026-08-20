@@ -16,8 +16,7 @@ final class Action
         public string $style = 'ghost', // primary | secondary | danger | ghost | link
         public ?array $target = null,   // ['type' => 'url'|'livewire'|'callback', ...]
         public bool $closesDialog = true,
-    ) {
-    }
+    ) {}
 
     public static function url(string $label, string $url, string $style = 'ghost'): self
     {

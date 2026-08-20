@@ -58,6 +58,7 @@ trait InteractsWithNotifications
      * <button @click="{{ $this->notifyAction('delete', loading: 'Suppression…', success: 'Supprimé.', error: 'Échec de la suppression.') }}">
      *
      * Relies on Alpine's $wire magic, so it only ever appears on an
+     *
      * @click of a Livewire component's own template — Alpine ships with
      * Livewire itself, nothing extra to load.
      */

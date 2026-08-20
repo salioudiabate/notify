@@ -11,6 +11,7 @@ use Salioudiabate\Notify\Builders\DialogBuilder;
 use Salioudiabate\Notify\Builders\ProgressBuilder;
 use Salioudiabate\Notify\Builders\ToastBuilder;
 use Salioudiabate\Notify\Builders\UpdateBuilder;
+use Salioudiabate\Notify\NotifyManager;
 use Salioudiabate\Notify\Support\PendingNotification;
 
 /**
@@ -28,7 +29,7 @@ use Salioudiabate\Notify\Support\PendingNotification;
  * @method static PendingNotification exception(\Throwable $e)
  * @method static void clearGroup(string $group)
  *
- * @see \Salioudiabate\Notify\NotifyManager
+ * @see NotifyManager
  */
 final class Notify extends Facade
 {

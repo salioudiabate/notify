@@ -149,12 +149,12 @@ abstract class NotificationBuilder
 
     /**
      * @param  string|Closure|null  $target  A route name, a plain URL, a
-     *                                        Livewire method name (when built
-     *                                        inside a component via the
-     *                                        InteractsWithNotifications
-     *                                        trait), or a Closure executed
-     *                                        server-side through a signed,
-     *                                        single-use callback URL.
+     *                                       Livewire method name (when built
+     *                                       inside a component via the
+     *                                       InteractsWithNotifications
+     *                                       trait), or a Closure executed
+     *                                       server-side through a signed,
+     *                                       single-use callback URL.
      */
     public function action(string $label, string|Closure|null $target = null, string $style = 'ghost'): static
     {
