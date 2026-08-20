@@ -179,15 +179,30 @@ abstract class NotificationBuilder
         return $this->send();
     }
 
+    /**
+     * Explicit signals (a real URL, a named route) always win over "maybe
+     * this string is a Livewire method name" — only once neither applies do
+     * we fall back to Livewire, using this builder's own ->forComponent()
+     * target if set, otherwise whichever component the trait registered as
+     * active for this request (see NotifyManager::activeLivewireComponent()).
+     */
     protected function resolveTarget(string|Closure|null $target, array $params = []): ?array
     {
+        $component = $this->component ?? $this->manager->activeLivewireComponent();
+
         return match (true) {
             $target === null => null,
             $target instanceof Closure => ['type' => 'callback', 'url' => CallbackAction::register($target)],
-            $this->component !== null => ['type' => 'livewire', 'component' => $this->component->getId(), 'method' => $target, 'params' => $params],
+            $this->looksLikeUrl($target) => ['type' => 'url', 'url' => $target],
             Route::has($target) => ['type' => 'url', 'url' => route($target, $params)],
+            $component !== null => ['type' => 'livewire', 'component' => $component->getId(), 'method' => $target, 'params' => $params],
             default => ['type' => 'url', 'url' => $target],
         };
+    }
+
+    private function looksLikeUrl(string $target): bool
+    {
+        return str_starts_with($target, '/') || str_contains($target, '://') || str_starts_with($target, 'mailto:');
     }
 
     protected function toPayload(): NotificationPayload

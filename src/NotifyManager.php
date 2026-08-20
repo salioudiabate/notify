@@ -140,10 +140,26 @@ final class NotifyManager
 
     public function resolveDriver(): NotificationDriver
     {
-        if ($this->container->bound('notify.livewire.active')) {
-            return new LivewireDriver($this->container->make('notify.livewire.active'));
+        if ($component = $this->activeLivewireComponent()) {
+            return new LivewireDriver($component);
         }
 
         return $this->container->make(SessionDriver::class);
+    }
+
+    /**
+     * Exposed so NotificationBuilder::resolveTarget() can resolve a bare
+     * method-name action to the same component a plain Notify:: call would
+     * already be pushing to — otherwise ->action('Label', 'someMethod')
+     * would only resolve correctly when chained after an explicit
+     * ->forComponent($this), which is inconsistent with how push() itself
+     * auto-upgrades to Livewire the moment a trait-using component is on
+     * the page.
+     */
+    public function activeLivewireComponent(): ?object
+    {
+        return $this->container->bound('notify.livewire.active')
+            ? $this->container->make('notify.livewire.active')
+            : null;
     }
 }
