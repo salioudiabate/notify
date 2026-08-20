@@ -34,6 +34,7 @@ $import->success('Import terminé.');
   - [Pure client-side JS](#pure-client-side-js)
 - [API](#api)
 - [Custom templates](#custom-templates)
+- [Light & dark mode](#light--dark-mode)
 - [Confirmations & server actions](#confirmations--server-actions)
 - [Existing `->with('success', ...)` calls, validation & exceptions](#existing---withsuccess--calls-validation--exceptions)
 - [Configuration](#configuration)
@@ -237,6 +238,27 @@ Notify::toast()->success()->title('Fait')->message('...')->template('brand')->se
 ```
 
 A `dialog` template handles both `confirm()` and `dialog()` payloads — it only needs to return the box itself; the backdrop, Esc-to-close, focus and queueing when a second dialog is requested while one is already open all stay in the package, since that's shared interaction plumbing rather than something a design should have to reimplement.
+
+## Light & dark mode
+
+Every component follows `prefers-color-scheme` out of the box — no setup required. Force one globally, or let visitors flip it themselves:
+
+```php
+// config/notify.php — forces it site-wide regardless of the visitor's OS setting
+'color_scheme' => 'dark', // null (default) | 'light' | 'dark'
+```
+
+```js
+// wire this to your own app's existing dark-mode toggle button — Notify
+// doesn't render one itself, it just needs to be told when yours is used
+darkModeToggle.addEventListener('click', () => {
+    Notify.setColorScheme(isDark ? 'light' : 'dark');
+});
+
+Notify.getColorScheme(); // 'light' | 'dark' | 'system'
+```
+
+`setColorScheme()` persists the choice in `localStorage`, so it survives reloads without any server round-trip, and overrides both `config('notify.color_scheme')` and the OS preference until `'system'` is passed again. If your app already has its own dark-mode cookie/session value, call `Notify.setColorScheme()` once on page load with that value instead of leaving it to `config()` — the two are independent, Notify doesn't read your app's own dark-mode flag automatically.
 
 ## Confirmations & server actions
 

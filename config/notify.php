@@ -53,6 +53,21 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Color scheme
+    |--------------------------------------------------------------------------
+    |
+    | null (default) follows the visitor's OS/browser preference
+    | (prefers-color-scheme), light/dark either way. Set to 'light' or
+    | 'dark' to force it site-wide regardless of the OS setting — or leave
+    | this alone and call Notify.setColorScheme('dark'|'light'|'system')
+    | client-side (e.g. from your own app's dark-mode toggle); that call
+    | persists across reloads via localStorage and takes precedence.
+    |
+    */
+    'color_scheme' => null,
+
+    /*
+    |--------------------------------------------------------------------------
     | Session flash bridge
     |--------------------------------------------------------------------------
     |

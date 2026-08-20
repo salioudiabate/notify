@@ -49,7 +49,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-notify-theme="light"]) {
     --notify-canvas: #0A0A0C;
     --notify-surface: #161619;
     --notify-surface-2: #1E1E22;
@@ -66,6 +66,48 @@
     --notify-shadow-toast: 0 12px 32px -8px rgba(0,0,0,.45), 0 2px 6px -2px rgba(0,0,0,.35);
     --notify-shadow-dialog: 0 24px 56px -12px rgba(0,0,0,.6);
   }
+}
+
+/*
+ * Manual override — wins over the OS preference above regardless of source
+ * order, since an attribute selector on :root is more specific than a bare
+ * :root. Set via Notify.setColorScheme('dark'|'light'|'system') or
+ * config('notify.color_scheme') — see resources/js/notify.js.
+ */
+:root[data-notify-theme="dark"] {
+  --notify-canvas: #0A0A0C;
+  --notify-surface: #161619;
+  --notify-surface-2: #1E1E22;
+  --notify-border: #2A2A31;
+  --notify-border-2: #35353D;
+  --notify-text-1: #F4F4F5;
+  --notify-text-2: #9E9EA8;
+  --notify-text-3: #6C6C76;
+  --notify-success: #3DD68C; --notify-success-bg: #0F2417; --notify-success-border: rgba(61,214,140,.2); --notify-success-fg: #3DD68C;
+  --notify-error: #F27A72; --notify-error-bg: #2C1817; --notify-error-border: rgba(242,122,114,.2); --notify-error-fg: #F27A72;
+  --notify-warning: #F5B544; --notify-warning-bg: #2B2112; --notify-warning-border: rgba(245,181,68,.2); --notify-warning-fg: #F5B544;
+  --notify-info: #6CA8FF; --notify-info-bg: #141F35; --notify-info-border: rgba(108,168,255,.2); --notify-info-fg: #6CA8FF;
+  --notify-shadow-card: 0 1px 2px rgba(0,0,0,.4);
+  --notify-shadow-toast: 0 12px 32px -8px rgba(0,0,0,.45), 0 2px 6px -2px rgba(0,0,0,.35);
+  --notify-shadow-dialog: 0 24px 56px -12px rgba(0,0,0,.6);
+}
+
+:root[data-notify-theme="light"] {
+  --notify-canvas: #F6F6F8;
+  --notify-surface: #FFFFFF;
+  --notify-surface-2: #FAFAFA;
+  --notify-border: #ECECF0;
+  --notify-border-2: #E3E3E9;
+  --notify-text-1: #131316;
+  --notify-text-2: #6B6B76;
+  --notify-text-3: #9A9AA5;
+  --notify-success: #17B26A; --notify-success-bg: #ECFDF3; --notify-success-border: #D3F3E0; --notify-success-fg: #067647;
+  --notify-error: #E5544E; --notify-error-bg: #FEF3F2; --notify-error-border: #FBDDDB; --notify-error-fg: #B42318;
+  --notify-warning: #F5A524; --notify-warning-bg: #FFFAEB; --notify-warning-border: #FAEBC8; --notify-warning-fg: #B54708;
+  --notify-info: #3B82F6; --notify-info-bg: #EFF6FF; --notify-info-border: #D8E7FE; --notify-info-fg: #175CD3;
+  --notify-shadow-card: 0 1px 2px rgba(11,11,20,.08);
+  --notify-shadow-toast: 0 10px 28px -6px rgba(11,11,20,.14), 0 2px 6px -2px rgba(11,11,20,.08);
+  --notify-shadow-dialog: 0 24px 48px -12px rgba(11,11,20,.18), 0 4px 12px -4px rgba(11,11,20,.08);
 }
 
 #notify-root, #notify-root * { box-sizing: border-box; }
@@ -115,6 +157,7 @@
 
 .notify-card {
   background: var(--notify-surface);
+  color: var(--notify-text-1);
   border: 1px solid var(--notify-border);
   border-radius: var(--notify-r-xl);
   box-shadow: var(--notify-shadow-toast);
@@ -155,20 +198,20 @@
 /* ---------- progress card ---------- */
 
 .notify-progress__head { display: flex; align-items: center; gap: 12px; padding: 18px 18px 0; }
-.notify-progress__icon { width: 36px; height: 36px; border-radius: var(--notify-r-md); background: var(--notify-surface-2); border: 1px solid var(--notify-border); display: flex; align-items: center; justify-content: center; flex: none; }
+.notify-progress__icon { width: 36px; height: 36px; border-radius: var(--notify-r-md); background: var(--notify-surface-2); border: 1px solid var(--notify-border); display: flex; align-items: center; justify-content: center; flex: none; color: var(--notify-text-2); }
 .notify-progress__text { flex: 1 1 0; min-width: 0; }
-.notify-progress__percent { font-size: 13px; font-weight: 600; letter-spacing: -.1px; }
+.notify-progress__percent { font-size: 13px; font-weight: 600; letter-spacing: -.1px; color: var(--notify-text-1); }
 .notify-progress__bar { height: 6px; border-radius: 3px; background: var(--notify-border); margin: 12px 18px 0; overflow: hidden; }
 .notify-progress__bar-fill { height: 100%; background: var(--notify-text-1); border-radius: 3px; transition: width .3s ease; }
 .notify-progress__foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 18px 18px; font-size: 12px; color: var(--notify-text-3); }
 
 /* ---------- inline/persistent alert ---------- */
 
-.notify-alert { display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px; border-radius: var(--notify-r-lg); border: 1px solid var(--notify-border); background: var(--notify-surface); }
-.notify-alert[data-variant="success"] { background: var(--notify-success-bg); border-color: var(--notify-success-border); }
-.notify-alert[data-variant="error"]   { background: var(--notify-error-bg);   border-color: var(--notify-error-border); }
-.notify-alert[data-variant="warning"] { background: var(--notify-warning-bg); border-color: var(--notify-warning-border); }
-.notify-alert[data-variant="info"]    { background: var(--notify-info-bg);    border-color: var(--notify-info-border); }
+.notify-alert { display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px; border-radius: var(--notify-r-lg); border: 1px solid var(--notify-border); background: var(--notify-surface); color: var(--notify-text-2); }
+.notify-alert[data-variant="success"] { background: var(--notify-success-bg); border-color: var(--notify-success-border); color: var(--notify-success); }
+.notify-alert[data-variant="error"]   { background: var(--notify-error-bg);   border-color: var(--notify-error-border);   color: var(--notify-error); }
+.notify-alert[data-variant="warning"] { background: var(--notify-warning-bg); border-color: var(--notify-warning-border); color: var(--notify-warning); }
+.notify-alert[data-variant="info"]    { background: var(--notify-info-bg);    border-color: var(--notify-info-border);    color: var(--notify-info); }
 
 /* ---------- buttons ---------- */
 
@@ -193,6 +236,7 @@
 .notify-dialog {
   width: min(440px, 100%);
   background: var(--notify-surface);
+  color: var(--notify-text-1);
   border: 1px solid var(--notify-border);
   border-radius: var(--notify-r-3xl);
   box-shadow: var(--notify-shadow-dialog);
@@ -206,14 +250,14 @@
 
 .notify-dialog[data-centered="true"] { text-align: center; display: flex; flex-direction: column; align-items: center; }
 
-.notify-dialog__icon { width: 48px; height: 48px; border-radius: 24px; display: flex; align-items: center; justify-content: center; background: var(--notify-surface-2); border: 1px solid var(--notify-border); }
+.notify-dialog__icon { width: 48px; height: 48px; border-radius: 24px; display: flex; align-items: center; justify-content: center; background: var(--notify-surface-2); border: 1px solid var(--notify-border); color: var(--notify-text-2); }
 .notify-dialog[data-centered="true"] .notify-dialog__icon { width: 56px; height: 56px; border-radius: 28px; }
-.notify-dialog__icon[data-variant="error"]   { background: var(--notify-error-bg);   border-color: var(--notify-error-border); }
-.notify-dialog__icon[data-variant="warning"] { background: var(--notify-warning-bg); border-color: var(--notify-warning-border); }
-.notify-dialog__icon[data-variant="info"]    { background: var(--notify-info-bg);    border-color: var(--notify-info-border); }
-.notify-dialog__icon[data-variant="success"] { background: var(--notify-success-bg); border-color: var(--notify-success-border); }
+.notify-dialog__icon[data-variant="error"]   { background: var(--notify-error-bg);   border-color: var(--notify-error-border);   color: var(--notify-error); }
+.notify-dialog__icon[data-variant="warning"] { background: var(--notify-warning-bg); border-color: var(--notify-warning-border); color: var(--notify-warning); }
+.notify-dialog__icon[data-variant="info"]    { background: var(--notify-info-bg);    border-color: var(--notify-info-border);    color: var(--notify-info); }
+.notify-dialog__icon[data-variant="success"] { background: var(--notify-success-bg); border-color: var(--notify-success-border); color: var(--notify-success); }
 
-.notify-dialog__title { font-size: 18px; font-weight: 600; letter-spacing: -.3px; margin-top: 20px; }
+.notify-dialog__title { font-size: 18px; font-weight: 600; letter-spacing: -.3px; margin-top: 20px; color: var(--notify-text-1); }
 .notify-dialog__message { font-size: 14px; color: var(--notify-text-2); margin-top: 8px; line-height: 1.6; }
 .notify-dialog__footer { display: flex; justify-content: space-between; align-items: center; margin-top: 24px; }
 .notify-dialog[data-centered="true"] .notify-dialog__footer { width: 100%; justify-content: center; }

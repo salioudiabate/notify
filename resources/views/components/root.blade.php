@@ -67,11 +67,15 @@
         'dismissible' => config('notify.dismissible', true),
         'animations' => config('notify.animations', true),
         'theme' => config('notify.theme'),
+        'colorScheme' => config('notify.color_scheme'),
     ];
     $notifyJsQueue = array_values($queue);
 @endphp
 
-<div id="notify-root" data-notify-position="{{ config('notify.position', 'top-right') }}"></div>
+{{-- Real mount point, not decorative: every toast/alert/dialog/progress card
+     is appended inside this element (see notify.js's mountRoot()), which is
+     what makes its font-family/color rules in notify.css actually apply. --}}
+<div id="notify-root"></div>
 
 <script>
     window.__NOTIFY_CONFIG__ = @json($notifyJsConfig);

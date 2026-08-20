@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  var CFG = window.__NOTIFY_CONFIG__ || { position: 'top-right', maxVisible: 4, dismissible: true, animations: true };
+  var CFG = window.__NOTIFY_CONFIG__ || { position: 'top-right', maxVisible: 4, dismissible: true, animations: true, colorScheme: null };
 
   /** @type {Array<object>} every currently-tracked payload, rendered or queued behind max_visible */
   var items = [];
@@ -55,6 +55,39 @@
     progress: buildProgressCard,
     dialog: defaultDialogTemplate,
   };
+
+  // --------------------------------------------------------- color scheme --
+
+  var COLOR_SCHEME_KEY = 'notify:color-scheme';
+  var VALID_SCHEMES = ['light', 'dark', 'system'];
+
+  /**
+   * 'light'/'dark' force that palette everywhere (see the :root[data-notify-theme]
+   * overrides in notify.css, which win over prefers-color-scheme regardless of
+   * the OS setting); 'system' (or anything else) removes the override and goes
+   * back to following the OS preference.
+   */
+  function applyColorScheme(scheme) {
+    var root = document.documentElement;
+
+    if (scheme === 'dark' || scheme === 'light') {
+      root.setAttribute('data-notify-theme', scheme);
+    } else {
+      root.removeAttribute('data-notify-theme');
+    }
+  }
+
+  function initColorScheme() {
+    var stored = null;
+
+    try {
+      stored = window.localStorage.getItem(COLOR_SCHEME_KEY);
+    } catch (e) {
+      // localStorage unavailable (private mode, disabled) — fall back to config/system
+    }
+
+    applyColorScheme(stored || CFG.colorScheme || 'system');
+  }
 
   // ---------------------------------------------------------------- icons --
 
@@ -105,12 +138,23 @@
     return node;
   }
 
+  /**
+   * Everything we render is mounted inside #notify-root rather than
+   * directly on <body> — that's what makes #notify-root's own font-family/
+   * color declarations (and a custom template's un-styled markup) actually
+   * take effect, instead of silently inheriting the host page's own text
+   * color. Falls back to <body> only if the component was never included.
+   */
+  function mountRoot() {
+    return document.getElementById('notify-root') || document.body;
+  }
+
   function stackFor(position) {
     if (stacks[position]) return stacks[position];
 
     var node = el('div', 'notify-stack');
     node.setAttribute('data-position', position);
-    document.body.appendChild(node);
+    mountRoot().appendChild(node);
     stacks[position] = node;
 
     return node;
@@ -438,7 +482,7 @@
       if (e.target === backdrop) dismiss(payload.id);
     });
 
-    document.body.appendChild(backdrop);
+    mountRoot().appendChild(backdrop);
     openDialogEl = backdrop;
     rendered[payload.id] = backdrop;
 
@@ -596,6 +640,35 @@
     registerTemplate: function (name, handlers) {
       templates[name] = handlers || {};
     },
+    /**
+     * Notify.setColorScheme('dark' | 'light' | 'system') — forces the
+     * palette globally, persisted across reloads (localStorage), regardless
+     * of the OS preference. Wire it to your own app's own dark-mode toggle:
+     *
+     *   darkModeToggle.addEventListener('click', () => {
+     *     Notify.setColorScheme(isDark ? 'light' : 'dark');
+     *   });
+     *
+     * The default for first-ever visits (before any toggle is used) comes
+     * from config('notify.color_scheme') — 'system' (the default) just
+     * follows prefers-color-scheme, same as if this was never called.
+     */
+    setColorScheme: function (scheme) {
+      if (VALID_SCHEMES.indexOf(scheme) === -1) {
+        throw new Error('Notify.setColorScheme() expects "light", "dark", or "system", got: ' + scheme);
+      }
+
+      applyColorScheme(scheme);
+
+      try {
+        window.localStorage.setItem(COLOR_SCHEME_KEY, scheme);
+      } catch (e) {
+        // localStorage unavailable — the scheme still applies for this page view
+      }
+    },
+    getColorScheme: function () {
+      return document.documentElement.getAttribute('data-notify-theme') || 'system';
+    },
   };
 
   window.notifyAction = function ($wire, method, params, messages) {
@@ -613,6 +686,8 @@
   // ---------------------------------------------------------------- boot --
 
   function boot() {
+    initColorScheme();
+
     (window.__NOTIFY_QUEUE__ || []).forEach(ingest);
 
     // Livewire's dispatch(name, notification: $payload) delivers named
