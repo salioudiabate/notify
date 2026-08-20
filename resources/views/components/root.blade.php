@@ -57,18 +57,24 @@
             'replace' => false,
         ];
     }
+
+    // built up-front, as a plain variable: @json() with a nested multi-call
+    // array expression inline can truncate mid-expression during Blade
+    // compilation — a bare variable reference is unambiguous.
+    $notifyJsConfig = [
+        'position' => config('notify.position', 'top-right'),
+        'maxVisible' => config('notify.max_visible', 4),
+        'dismissible' => config('notify.dismissible', true),
+        'animations' => config('notify.animations', true),
+    ];
+    $notifyJsQueue = array_values($queue);
 @endphp
 
 <div id="notify-root" data-notify-position="{{ config('notify.position', 'top-right') }}"></div>
 
 <script>
-    window.__NOTIFY_CONFIG__ = @json([
-        'position' => config('notify.position', 'top-right'),
-        'maxVisible' => config('notify.max_visible', 4),
-        'dismissible' => config('notify.dismissible', true),
-        'animations' => config('notify.animations', true),
-    ]);
-    window.__NOTIFY_QUEUE__ = @json(array_values($queue));
+    window.__NOTIFY_CONFIG__ = @json($notifyJsConfig);
+    window.__NOTIFY_QUEUE__ = @json($notifyJsQueue);
 </script>
 
 @if (config('notify.assets.serve', true) && \Illuminate\Support\Facades\Route::has('notify.assets.css'))
