@@ -29,6 +29,25 @@ final class NotifyServiceProvider extends PackageServiceProvider
     public function packageBooted(): void
     {
         $this->registerRoutes();
+        $this->publishAssets();
+    }
+
+    /**
+     * Backs the `php artisan vendor:publish --tag=notify-assets` command
+     * documented in the README, for teams that want to self-host the JS/CSS
+     * through their own build pipeline instead of the package serving them
+     * directly (see config('notify.assets.serve')).
+     */
+    private function publishAssets(): void
+    {
+        if (! $this->app->runningInConsole()) {
+            return;
+        }
+
+        $this->publishes([
+            __DIR__.'/../resources/js/notify.js' => public_path('vendor/notify/notify.js'),
+            __DIR__.'/../resources/css/notify.css' => public_path('vendor/notify/notify.css'),
+        ], 'notify-assets');
     }
 
     private function registerRoutes(): void

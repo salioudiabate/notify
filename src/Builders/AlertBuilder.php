@@ -8,11 +8,11 @@ use Salioudiabate\Notify\Concerns\HasVariant;
 use Salioudiabate\Notify\NotifyManager;
 
 /**
- * Covers both "important overlay notification" (the brief's Notify::alert())
- * and the persistent banner case — the only difference between the two is
- * how many actions you attach. Inline, in-page alerts (the flat tinted
- * surface living inside a Blade view, no floating/dismiss lifecycle) are a
- * plain <x-notify::alert> Blade component instead, not part of this pipeline.
+ * Covers both the "important overlay notification" and the persistent
+ * banner case — the only difference between the two is how many actions
+ * you attach (button() alone vs. action() + button()). There is no separate
+ * static, in-page Blade alert component today — every alert floats and goes
+ * through this same payload/JS pipeline (see README roadmap).
  */
 final class AlertBuilder extends NotificationBuilder
 {

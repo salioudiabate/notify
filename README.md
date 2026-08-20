@@ -54,6 +54,8 @@ The backend never renders HTML — it only ever produces a small JSON payload (`
 
 ## Installation
 
+Requires PHP 8.3+, Laravel 11/12/13, and — only if you want the instant, no-reload upgrade — Livewire 3 or 4 (entirely optional, see [Why](#why)).
+
 ```bash
 composer require salioudiabate/notify
 php artisan vendor:publish --tag=notify-config
@@ -118,6 +120,13 @@ class DeleteClientButton extends Component
 }
 ```
 
+```blade
+{{-- notifyAction(): loading -> Livewire call -> success/error, wired as one Alpine expression --}}
+<button @click="{{ $this->notifyAction('delete', ['client' => $client->id], loading: 'Suppression…', success: 'Client supprimé.', error: 'Échec de la suppression.') }}">
+    Supprimer
+</button>
+```
+
 `InteractsWithNotifications` registers the component the moment it boots (`bootInteractsWithNotifications()` — a standard Livewire trait hook, nothing package-specific), so even a plain `Notify::success(...)` call made anywhere during that request — a service class, a job dispatched synchronously, not just `$this->notify()` — is upgraded to an instant push automatically for the rest of the request.
 
 ### Pure client-side JS
@@ -126,7 +135,18 @@ No backend call at all:
 
 ```js
 Notify.success('Enregistré.');
+Notify.error('Une erreur est survenue.');
+Notify.warning('Vérifiez ces informations.');
+Notify.info('Nouvelle version disponible.');
 Notify.confirm({ title: 'Continuer ?', message: 'Cette action est définitive.', danger: true, onConfirm: () => doThing() });
+
+// the escape hatch behind success()/error()/warning()/info() — every payload
+// field, including which template renders it (see § Custom templates)
+Notify.toast({ variant: 'success', title: '...', message: '...', duration: 6000 });
+
+Notify.dismiss(id);
+Notify.clear();
+Notify.clearGroup('users');
 ```
 
 ## API
@@ -138,9 +158,25 @@ Notify::warning($message, $title = null);
 Notify::info($message, $title = null);
 
 Notify::toast()->success()->title('Succès')->message('...')->duration(5000)->send();
+
+// alert() covers both a one-off important notice (button() alone) and a
+// persistent banner (add action() too) — same builder, more actions
 Notify::alert()->warning()->title('Attention')->message('...')->button('Compris')->show();
+Notify::alert()->info()->title('Maintenance programmée')->message('...')
+    ->action('En savoir plus', 'https://...', 'link')->button('Fermer')->show(); // persists until dismissed
+
 Notify::confirm('Titre', 'Message')->danger()->confirmText('Supprimer')->onConfirm(...)->show();
+
+// dialog() is free-form (any number of action() buttons) — centered() switches
+// to the single-button, celebratory layout; without it you get a regular modal
 Notify::dialog()->success()->centered()->title('Paiement réussi')->message('...')->action('Continuer')->show();
+
+// called from inside a Livewire component method: 'signOut' resolves to
+// $this->signOut() on that same component — the same target resolution
+// onConfirm() uses (a route name or URL always wins first, see below)
+Notify::dialog()->info()->title('Session bientôt expirée')->message('...')
+    ->action('Se déconnecter', 'signOut')->action('Rester connecté', null, 'primary')->show();
+
 Notify::progress()->title('Importation')->progress(45)->status('Lot 4 sur 7')->send();
 
 $pending = Notify::loading('Traitement...');
@@ -153,6 +189,8 @@ Notify::exception($e); // never leaks $e->getMessage() in production unless conf
 ```
 
 Shared fluent methods on every builder: `title()`, `message()`, `icon()`, `duration()`, `position()`, `dismissible()`, `persistent()`, `group()`, `id()`, `action($label, $target, $style)`, `url($url, $label)`, `template($name)`.
+
+`position()` accepts `top-right` (default), `top-left`, `top-center`, `bottom-right`, `bottom-left`, `bottom-center`. `action()`'s `$target` resolves exactly like `onConfirm()` does (see [below](#confirmations--server-actions)) — a route name, a URL, a Livewire method name, or a `Closure` all work the same way on any toast/alert/dialog action, not just a confirmation's.
 
 ## Custom templates
 
