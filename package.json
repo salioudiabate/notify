@@ -1,0 +1,12 @@
+{
+  "private": true,
+  "description": "Dev-only tooling to test resources/js/notify.js. Never required by consumers of the package — see README: zero build step, no npm install needed to use Notify.",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "jsdom": "^29.1.1",
+    "vitest": "^4.1.11"
+  }
+}

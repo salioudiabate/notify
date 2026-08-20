@@ -747,6 +747,7 @@
         title: options.title || null, message: options.message || null, icon: null,
         duration: null, position: CFG.position, dismissible: true, persistent: true,
         group: null, actions: actions, url: null, progress: null, meta: {}, replace: false,
+        template: options.template || null,
       });
 
       return id;
