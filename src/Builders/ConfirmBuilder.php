@@ -94,6 +94,18 @@ class ConfirmBuilder extends NotificationBuilder
      *                                  Closure — executed through a signed,
      *                                  single-use server action, so this
      *                                  works in a plain Laravel app too.
+     *
+     *                                  Security: the signed URL only proves
+     *                                  it's untampered and not expired — it
+     *                                  does NOT prove who's clicking it. A
+     *                                  Closure performing a sensitive or
+     *                                  destructive action should re-check
+     *                                  authorization itself when it runs
+     *                                  (e.g. re-fetch the model and
+     *                                  Gate::authorize(...) inside it),
+     *                                  rather than trusting whatever was true
+     *                                  when this was called — see README §
+     *                                  Security and config('notify.actions.middleware').
      */
     public function onConfirm(string|Closure $action, array $params = []): static
     {

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Salioudiabate\Notify\Support;
 
 use Closure;
+use Illuminate\Contracts\Cache\LockProvider;
+use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
@@ -45,10 +47,36 @@ final class CallbackAction
         $store = Cache::store(config('notify.actions.cache_store'));
         $key = "notify.action.$token";
 
-        /** @var SerializableClosure|null $wrapped */
-        $wrapped = $store->get($key);
-        $store->forget($key);
+        $resolve = function () use ($store, $key): ?Closure {
+            /** @var SerializableClosure|null $wrapped */
+            $wrapped = $store->get($key);
+            $store->forget($key);
 
-        return $wrapped?->getClosure();
+            return $wrapped?->getClosure();
+        };
+
+        // get() then forget() isn't atomic on its own — two concurrent
+        // requests for the same token (a double-click, a deliberate replay
+        // race) could both read the closure before either deletes it,
+        // breaking "single-use" and potentially firing a destructive action
+        // twice. The lock closes that window; the second request waits
+        // briefly, then correctly finds nothing left to resolve. Every
+        // built-in cache driver (file, database, redis, memcached, dynamodb,
+        // array) supports this — only an exotic custom driver wouldn't,
+        // hence the instanceof check rather than assuming it unconditionally.
+        $underlyingStore = $store->getStore();
+
+        if (! $underlyingStore instanceof LockProvider) {
+            return $resolve();
+        }
+
+        try {
+            return $underlyingStore->lock("notify.action.lock.$token", 10)->block(
+                config('notify.actions.lock_wait', 5),
+                $resolve
+            );
+        } catch (LockTimeoutException) {
+            return null;
+        }
     }
 }

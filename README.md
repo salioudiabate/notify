@@ -463,7 +463,7 @@ Note that `->toUser()`/`->toChannel()` need the full builder form — `Notify::s
 
 - **A route name or URL** — the confirm button submits/navigates there.
 - **A Livewire method name** — only when the builder was created via `$this->confirm(...)` inside a component; resolved to a `Livewire.find(id).call(method, ...params)` client-side.
-- **A `Closure`** — works even outside Livewire. The closure is serialized, cached server-side under a random single-use token, and exposed behind a *signed*, short-lived URL (`config('notify.actions.ttl')`, 5 minutes by default). Nothing about its contents ever reaches the client — only the opaque token does, and it's deleted from cache the moment it's read, so it can only fire once.
+- **A `Closure`** — works even outside Livewire. The closure is serialized, cached server-side under a random single-use token, and exposed behind a *signed*, short-lived URL (`config('notify.actions.ttl')`, 5 minutes by default). Nothing about its contents ever reaches the client — only the opaque token does, and it's deleted from cache the moment it's read, guarded by a lock so two near-simultaneous requests for the same token can't both slip through and run it twice.
 
 ```php
 Notify::confirm('Supprimer ce fichier ?')
@@ -473,6 +473,18 @@ Notify::confirm('Supprimer ce fichier ?')
 ```
 
 Set `notify.actions.enabled` to `false` if you never pass raw closures (routes and Livewire methods don't need this endpoint at all).
+
+**The signature alone doesn't authenticate anyone.** It only proves the URL is untampered and not expired — not who's clicking it. If that URL ever leaks (synced browser history, a corporate proxy's access log, a `Referrer-Policy` leak to a third-party resource embedded on the confirmation page, a shared screenshot), whoever has it can trigger the closure within its TTL. For anything sensitive or destructive, re-check authorization *inside* the closure itself when it runs, rather than trusting whatever was true when `onConfirm()` was called:
+
+```php
+Notify::confirm('Supprimer ce client ?')->danger()->onConfirm(function () use ($clientId) {
+    $client = Client::findOrFail($clientId);
+    Gate::authorize('delete', $client); // re-checked now, not assumed from earlier
+    $client->delete();
+})->show();
+```
+
+`config('notify.actions.middleware')` adds extra middleware to the callback route on top of `signed` — e.g. `['auth']`, to reject an anonymous request outright before the closure even runs. Defense in depth, not a replacement for the check above: `[]` by default, since not every confirmation is meant to require a login (a guest-facing "unsubscribe" confirmation, for instance).
 
 ## Existing `->with('success', ...)` calls, validation & exceptions
 
@@ -487,13 +499,14 @@ Set `notify.actions.enabled` to `false` if you never pass raw closures (routes a
 php artisan vendor:publish --tag=notify-config
 ```
 
-See `config/notify.php` for the full reference: default position/duration per variant, `max_visible` before notifications collapse into a "N more" pill, the session-flash key bridge, validation/exception message policy, and the signed-action TTL.
+See `config/notify.php` for the full reference: default position/duration per variant, `max_visible` before notifications collapse into a "N more" pill, the session-flash key bridge, validation/exception message policy, and the signed-action TTL/middleware/lock wait.
 
 ## Security
 
-- Signed, single-use, time-boxed callback URLs for `onConfirm(Closure ...)` — see [above](#confirmations--server-actions).
+- Signed, single-use, time-boxed, lock-guarded callback URLs for `onConfirm(Closure ...)` — see [above](#confirmations--server-actions), including why the signature isn't the same thing as authentication and what to do about it.
 - `Notify::exception()` never surfaces `$e->getMessage()` outside `local`/`testing` environments unless you explicitly opt in via `config('notify.errors.local')`.
 - All rendered strings (title, message, labels) go through the front-end's own escaping — nothing user-supplied is ever injected as raw HTML. The one deliberate exception is `->icon()`: passing it markup (`->icon('<svg>...</svg>')`, see [Icons, text & button colors](#icons-text--button-colors)) inserts it verbatim, same as every built-in icon already does — treat it like any other trusted, developer-authored template string, never like `title()`/`message()`, which are meant for arbitrary content and always escaped.
+- `->toUser()`/`->toChannel()` broadcasts depend entirely on your own `routes/channels.php` authorization callback — the package has no way to enforce that channel access is scoped correctly. Never put anything sensitive (a code, a token, private details) directly in a notification's message on the strength of that alone.
 
 ## Roadmap
 

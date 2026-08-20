@@ -218,11 +218,37 @@ return [
     | signed route when the user confirms. Disable if you never pass raw
     | closures (routes/Livewire methods don't need this at all).
     |
+    | Security note: the 'signed' middleware only proves the URL is
+    | untampered and not expired — it says nothing about who's making the
+    | request right now. A closure performing a sensitive/destructive action
+    | should always re-check authorization itself (e.g. re-fetch the model
+    | and call $this->authorize() / Gate::authorize() inside the closure,
+    | rather than trusting whatever was true when it was created) — 'middleware'
+    | below adds defense in depth on top of that, it doesn't replace it.
+    |
     */
     'actions' => [
         'enabled' => true,
         'ttl' => 300, // seconds
         'cache_store' => null, // null = default cache store
+
+        /*
+         * Extra middleware for the signed callback route — e.g. ['auth'] to
+         * reject an anonymous request outright before the closure even runs.
+         * Empty by default: not every onConfirm(Closure) is meant to require
+         * a login (a guest-facing "unsubscribe" confirmation, for instance).
+         */
+        'middleware' => [],
+
+        /*
+         * Seconds CallbackAction::resolve() waits to acquire the per-token
+         * lock guarding its single-use guarantee, on a cache store that
+         * supports atomic locks (file/database/redis/memcached/dynamodb/
+         * array all do). The critical section is a single get()+forget(),
+         * so this only ever matters under genuine concurrent requests for
+         * the exact same token — a low number is fine.
+         */
+        'lock_wait' => 5,
     ],
 
     /*

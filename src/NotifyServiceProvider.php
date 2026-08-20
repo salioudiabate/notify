@@ -54,8 +54,11 @@ final class NotifyServiceProvider extends PackageServiceProvider
     {
         Route::middleware('web')->group(function (): void {
             if (config('notify.actions.enabled', true)) {
+                // 'signed' alone only proves the URL is untampered and not
+                // expired — never who's making the request right now (see
+                // config('notify.actions.middleware') and README § Security).
                 Route::post('/notify/actions/{token}', ActionController::class)
-                    ->middleware('signed')
+                    ->middleware(['signed', ...config('notify.actions.middleware', [])])
                     ->name('notify.action');
             }
 
