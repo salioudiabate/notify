@@ -48,6 +48,10 @@ abstract class NotificationBuilder
 
     protected array $meta = [];
 
+    /** Front-end template name (see Notify.registerTemplate()); null falls
+     *  back to config('notify.theme'), then to the built-in "default". */
+    protected ?string $template = null;
+
     /** Set via forComponent() by InteractsWithNotifications, to force this
      *  notification to a specific Livewire component regardless of which
      *  component last booted the trait on the page. */
@@ -124,6 +128,14 @@ abstract class NotificationBuilder
     public function group(string $group): static
     {
         $this->group = $group;
+
+        return $this;
+    }
+
+    /** Render this one notification with a template registered via Notify.registerTemplate('name', {...}) instead of the default look. */
+    public function template(string $name): static
+    {
+        $this->template = $name;
 
         return $this;
     }
@@ -222,6 +234,7 @@ abstract class NotificationBuilder
             actions: $this->actions,
             progress: $this->progress,
             meta: $this->meta,
+            template: $this->template,
         );
     }
 }

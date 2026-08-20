@@ -31,6 +31,7 @@ final class NotificationPayload implements Arrayable, JsonSerializable
         public ?int $progress = null,
         public array $meta = [],
         public bool $replace = false,
+        public ?string $template = null,
     ) {
     }
 
@@ -53,6 +54,7 @@ final class NotificationPayload implements Arrayable, JsonSerializable
             'progress' => $this->progress,
             'meta' => $this->meta,
             'replace' => $this->replace,
+            'template' => $this->template,
         ];
     }
 

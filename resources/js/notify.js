@@ -17,6 +17,45 @@
   var dialogQueue = [];
   var openDialogEl = null;
 
+  // ------------------------------------------------------------- templates --
+
+  /**
+   * name -> { toast?, alert?, progress?, dialog? }, each (payload, helpers) => HTMLElement.
+   * "default" is registered near the bottom, once its builder functions
+   * exist. A custom template only needs to define the types it wants to
+   * reskin — anything it omits falls back to "default" automatically (see
+   * resolveRenderer()). Registered via Notify.registerTemplate() — see
+   * README § Custom templates.
+   */
+  var templates = Object.create(null);
+
+  function resolveRenderer(payload, type) {
+    var name = payload.template || CFG.theme || 'default';
+    var tpl = templates[name] || templates.default;
+
+    return tpl[type] || templates.default[type];
+  }
+
+  function helpers() {
+    return {
+      el: el,
+      escapeHtml: escapeHtml,
+      icon: iconMarkup,
+      actions: buildActions,
+      runAction: runAction,
+      dismiss: dismiss,
+    };
+  }
+
+  // registered here (not where the functions are defined below) so it reads
+  // as the seam it is; safe because function declarations are hoisted.
+  templates.default = {
+    toast: buildCard,
+    alert: buildAlertCard,
+    progress: buildProgressCard,
+    dialog: defaultDialogTemplate,
+  };
+
   // ---------------------------------------------------------------- icons --
 
   var ICONS = {
@@ -223,10 +262,7 @@
   }
 
   function buildFor(payload) {
-    if (payload.type === 'alert') return buildAlertCard(payload);
-    if (payload.type === 'progress') return buildProgressCard(payload);
-
-    return buildCard(payload);
+    return resolveRenderer(payload, payload.type)(payload, helpers());
   }
 
   function isStackable(payload) {
@@ -350,40 +386,53 @@
 
   // --------------------------------------------------------------- dialog --
 
+  /**
+   * The default look for both 'confirm' and 'dialog' payloads. A custom
+   * template can override just this one key ({ dialog: fn }) and everything
+   * else (toast/alert/progress) keeps rendering with the built-in look.
+   * Backdrop, queueing, focus and Esc-to-close stay in showDialog() below —
+   * that's shared plumbing, not "design".
+   */
+  function defaultDialogTemplate(payload, h) {
+    var dialog = h.el('div', 'notify-dialog');
+    dialog.setAttribute('data-centered', !!(payload.meta && payload.meta.centered));
+
+    var iconWrap = h.el('div', 'notify-dialog__icon', h.icon({ variant: payload.variant, icon: payload.icon || (payload.variant === 'error' ? 'trash' : payload.variant) }));
+    iconWrap.setAttribute('data-variant', payload.variant);
+    dialog.appendChild(iconWrap);
+
+    if (payload.title) dialog.appendChild(h.el('div', 'notify-dialog__title', h.escapeHtml(payload.title)));
+    if (payload.message) dialog.appendChild(h.el('div', 'notify-dialog__message', h.escapeHtml(payload.message)));
+
+    var footer = h.el('div', 'notify-dialog__footer');
+    if (!(payload.meta && payload.meta.centered)) {
+      footer.appendChild(h.el('div', 'notify-kbd', '<span>Esc</span> pour fermer'));
+    }
+
+    var buttons = h.el('div', 'notify-card__actions');
+    (payload.actions || []).forEach(function (action) {
+      var btn = h.el('button', 'notify-btn notify-btn--' + (action.style || 'secondary'), h.escapeHtml(action.label));
+      btn.type = 'button';
+      btn.addEventListener('click', function () { h.runAction(action, payload); });
+      buttons.appendChild(btn);
+    });
+    footer.appendChild(buttons);
+    dialog.appendChild(footer);
+
+    return dialog;
+  }
+
   function showDialog(payload) {
     if (openDialogEl) {
       dialogQueue.push(payload);
       return;
     }
 
+    var renderDialog = resolveRenderer(payload, 'dialog');
+    var dialog = renderDialog(payload, helpers());
+
     var backdrop = el('div', 'notify-backdrop');
-    var dialog = el('div', 'notify-dialog');
-    dialog.setAttribute('data-notify-id', payload.id);
-    dialog.setAttribute('data-centered', !!(payload.meta && payload.meta.centered));
-
-    var iconWrap = el('div', 'notify-dialog__icon', iconMarkup({ variant: payload.variant, icon: payload.icon || (payload.variant === 'error' ? 'trash' : payload.variant) }));
-    iconWrap.setAttribute('data-variant', payload.variant);
-    dialog.appendChild(iconWrap);
-
-    if (payload.title) dialog.appendChild(el('div', 'notify-dialog__title', escapeHtml(payload.title)));
-    if (payload.message) dialog.appendChild(el('div', 'notify-dialog__message', escapeHtml(payload.message)));
-
-    var footer = el('div', 'notify-dialog__footer');
-    if (!(payload.meta && payload.meta.centered)) {
-      var hint = el('div', 'notify-kbd', '<span>Esc</span> pour fermer');
-      footer.appendChild(hint);
-    }
-
-    var buttons = el('div', 'notify-card__actions');
-    (payload.actions || []).forEach(function (action) {
-      var btn = el('button', 'notify-btn notify-btn--' + (action.style || 'secondary'), escapeHtml(action.label));
-      btn.type = 'button';
-      btn.addEventListener('click', function () { runAction(action, payload); });
-      buttons.appendChild(btn);
-    });
-    footer.appendChild(buttons);
-    dialog.appendChild(footer);
-
+    backdrop.setAttribute('data-notify-id', payload.id);
     backdrop.appendChild(dialog);
     backdrop.addEventListener('mousedown', function (e) {
       if (e.target === backdrop) dismiss(payload.id);
@@ -393,7 +442,7 @@
     openDialogEl = backdrop;
     rendered[payload.id] = backdrop;
 
-    var firstButton = buttons.querySelector('button');
+    var firstButton = backdrop.querySelector('button');
     if (firstButton) firstButton.focus();
   }
 
@@ -409,8 +458,7 @@
 
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape' && openDialogEl) {
-      var id = openDialogEl.querySelector('[data-notify-id]').getAttribute('data-notify-id');
-      dismiss(id);
+      dismiss(openDialogEl.getAttribute('data-notify-id'));
     }
   });
 
@@ -471,6 +519,26 @@
   }
 
   window.Notify = {
+    /**
+     * The escape hatch behind success()/error()/warning()/info(): every
+     * field a toast payload supports, including which template renders it —
+     * matching PHP's Notify::toast()->template('x') for pages with no
+     * backend call at all.
+     */
+    toast: function (options) {
+      options = options || {};
+      var id = uuid();
+      ingest({
+        id: id, type: 'toast', variant: options.variant || 'neutral',
+        title: options.title || null, message: options.message || null,
+        icon: options.icon || null, duration: options.duration !== undefined ? options.duration : 4000,
+        position: options.position || CFG.position, dismissible: options.dismissible !== false,
+        persistent: !!options.persistent, group: options.group || null, actions: options.actions || [],
+        url: null, progress: options.progress != null ? options.progress : null,
+        meta: options.meta || {}, replace: false, template: options.template || null,
+      });
+      return makePending(id);
+    },
     success: function (message, title) { return basicToast('success', message, title, 4000); },
     error: function (message, title) { return basicToast('error', message, title, null); },
     warning: function (message, title) { return basicToast('warning', message, title, 6000); },
@@ -509,6 +577,25 @@
     dismiss: dismiss,
     clear: clearAll,
     clearGroup: clearGroup,
+    /**
+     * Reskin one or more notification types. Omit a key to keep the
+     * built-in look for that type — only what you define is overridden.
+     *
+     *   Notify.registerTemplate('brand', {
+     *     toast: (payload, h) => {
+     *       const card = h.el('div', 'my-toast');
+     *       card.textContent = payload.title;
+     *       return card;
+     *     },
+     *   });
+     *
+     * Then either set it globally (config('notify.theme') = 'brand', or
+     * window.__NOTIFY_CONFIG__.theme = 'brand' before this script runs), or
+     * per notification: Notify::toast()->template('brand')->...
+     */
+    registerTemplate: function (name, handlers) {
+      templates[name] = handlers || {};
+    },
   };
 
   window.notifyAction = function ($wire, method, params, messages) {

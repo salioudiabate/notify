@@ -33,6 +33,7 @@ $import->success('Import terminé.');
   - [Livewire — instant, no-reload](#livewire--instant-no-reload)
   - [Pure client-side JS](#pure-client-side-js)
 - [API](#api)
+- [Custom templates](#custom-templates)
 - [Confirmations & server actions](#confirmations--server-actions)
 - [Existing `->with('success', ...)` calls, validation & exceptions](#existing---withsuccess--calls-validation--exceptions)
 - [Configuration](#configuration)
@@ -151,7 +152,53 @@ Notify::clearGroup('users');
 Notify::exception($e); // never leaks $e->getMessage() in production unless configured to
 ```
 
-Shared fluent methods on every builder: `title()`, `message()`, `icon()`, `duration()`, `position()`, `dismissible()`, `persistent()`, `group()`, `id()`, `action($label, $target, $style)`, `url($url, $label)`.
+Shared fluent methods on every builder: `title()`, `message()`, `icon()`, `duration()`, `position()`, `dismissible()`, `persistent()`, `group()`, `id()`, `action($label, $target, $style)`, `url($url, $label)`, `template($name)`.
+
+## Custom templates
+
+The built-in look ("default") is one entry in a template registry, not a hardcoded renderer — the backend only ever produces a payload (`type`, `variant`, `title`, `message`, `actions`, ...), and `notify.js` picks a template function to turn it into a visual. You can register your own and either use it for one notification or make it the default for the whole app, without touching the package.
+
+```js
+// resources/js/app.js — anywhere that runs before the notification fires
+Notify.registerTemplate('brand', {
+    toast(payload, h) {
+        const card = h.el('div', 'my-toast my-toast--' + payload.variant);
+        card.innerHTML = `
+            <strong>${h.escapeHtml(payload.title ?? '')}</strong>
+            <p>${h.escapeHtml(payload.message ?? '')}</p>
+        `;
+        card.appendChild(h.actions(payload)); // reuse built-in action-button wiring
+        return card;
+    },
+    // alert / progress / dialog are omitted here — they keep rendering with
+    // the built-in look until you define them too. Override only what you need.
+});
+```
+
+`h` gives your template function everything the built-in ones use internally, so you don't have to reinvent action resolution or escaping:
+
+| Helper | What it does |
+|---|---|
+| `h.el(tag, className?, innerHTML?)` | Create an element |
+| `h.escapeHtml(value)` | HTML-escape a string |
+| `h.icon(payload)` | Resolve the semantic icon markup for a variant |
+| `h.actions(payload)` | Build the action-button row, already wired to `h.runAction` |
+| `h.runAction(action, payload)` | Execute one action's target (url/route/Livewire/callback) and dismiss |
+| `h.dismiss(id)` | Remove a notification by id |
+
+Use it for one notification:
+
+```php
+Notify::toast()->success()->title('Fait')->message('...')->template('brand')->send();
+```
+
+...or make it the default for every notification in the app, in `config/notify.php`:
+
+```php
+'theme' => 'brand',
+```
+
+A `dialog` template handles both `confirm()` and `dialog()` payloads — it only needs to return the box itself; the backdrop, Esc-to-close, focus and queueing when a second dialog is requested while one is already open all stay in the package, since that's shared interaction plumbing rather than something a design should have to reimplement.
 
 ## Confirmations & server actions
 

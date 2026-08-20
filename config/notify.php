@@ -37,6 +37,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Template
+    |--------------------------------------------------------------------------
+    |
+    | The built-in look ("default") is one of possibly several templates —
+    | register your own front-end template with Notify.registerTemplate()
+    | (see README § Custom templates) and set its name here to reskin every
+    | notification globally, or call ->template('yours') on a single
+    | builder to override it just for that one.
+    |
+    */
+    'theme' => null,
+
+    /*
+    |--------------------------------------------------------------------------
     | Session flash bridge
     |--------------------------------------------------------------------------
     |

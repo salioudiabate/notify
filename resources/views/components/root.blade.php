@@ -66,6 +66,7 @@
         'maxVisible' => config('notify.max_visible', 4),
         'dismissible' => config('notify.dismissible', true),
         'animations' => config('notify.animations', true),
+        'theme' => config('notify.theme'),
     ];
     $notifyJsQueue = array_values($queue);
 @endphp
