@@ -2,6 +2,7 @@
 
 [![Tests](https://github.com/salioudiabate/notify/actions/workflows/tests.yml/badge.svg)](https://github.com/salioudiabate/notify/actions/workflows/tests.yml)
 [![Latest Version](https://img.shields.io/packagist/v/salioudiabate/notify.svg)](https://packagist.org/packages/salioudiabate/notify)
+[![Total Downloads](https://img.shields.io/packagist/dt/salioudiabate/notify.svg)](https://packagist.org/packages/salioudiabate/notify)
 [![License](https://img.shields.io/packagist/l/salioudiabate/notify.svg)](LICENSE.md)
 
 A unified notification & feedback UI system for Laravel — toasts, alerts, confirmations, dialogs, loading and progress, from one fluent API. **Livewire is optional.** A plain Laravel controller gets the full feature set through session flashing; the moment a Livewire component opts in, the same calls become instant, no-reload pushes — nothing to rewrite either way.
