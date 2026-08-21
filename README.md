@@ -42,6 +42,7 @@ $import->success('Import terminé.');
 - [Configuration](#configuration)
 - [Security](#security)
 - [Roadmap](#roadmap)
+- [Changelog](#changelog)
 
 ## Why
 
@@ -511,6 +512,10 @@ See `config/notify.php` for the full reference: default position/duration per va
 ## Roadmap
 
 Database-backed persistent notifications (so one sent via `->toUser()`/`->toChannel()` to an offline recipient isn't simply lost — see [Broadcasting to a specific user](#broadcasting-to-a-specific-user)), browser (native) notifications, presets, sound, and `Notify::dialog()->view()`/`->component()` for rendering arbitrary Blade or Livewire content inside the dialog shell — today `dialog()` supports title/message/icon/actions only, deliberately, rather than a half-finished remote-content pipeline.
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for what changed in each release.
 
 ## License
 
