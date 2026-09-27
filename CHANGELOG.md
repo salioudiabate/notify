@@ -8,6 +8,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) — 
 
 Nothing yet.
 
+## [1.0.1] - 2026-09-27
+
+### Fixed
+
+- Notifications and confirmations survive Livewire's `wire:navigate`: the runtime script is now loaded with `data-navigate-once` (it was booted again on every page change, so a confirmation opened once per navigation, stacking dark backdrops that could not be closed), and stacks/dialogs detached by a body swap are recreated in the current `#notify-root`.
+
 ## [1.0.0] - 2026-08-21
 
 Initial release.

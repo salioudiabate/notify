@@ -179,3 +179,9 @@ it('bridges Breeze/Jetstream\'s "status" key to a success toast too', function (
 it('does not queue anything for a flash key with no session value set', function () {
     expect(renderedQueue())->toBe([]);
 });
+
+it('loads the runtime only once across wire:navigate page changes', function () {
+    $html = (string) view('notify::components.root')->render();
+
+    expect($html)->toMatch('/<script defer src="[^"]+" data-navigate-once><\/script>/');
+});

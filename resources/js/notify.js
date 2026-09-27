@@ -276,7 +276,9 @@
   }
 
   function stackFor(position) {
-    if (stacks[position]) return stacks[position];
+    // A cached stack can be detached from the page when the body is swapped
+    // (Livewire's wire:navigate, Turbo...): recreate it in the current root.
+    if (stacks[position] && stacks[position].isConnected) return stacks[position];
 
     var node = el('div', 'notify-stack');
     node.setAttribute('data-position', position);
@@ -596,6 +598,11 @@
   }
 
   function showDialog(payload) {
+    // Same for a dialog left open across a body swap: it's no longer on the page.
+    if (openDialogEl && !openDialogEl.isConnected) {
+      openDialogEl = null;
+    }
+
     if (openDialogEl) {
       dialogQueue.push(payload);
       return;

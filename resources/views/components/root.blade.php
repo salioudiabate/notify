@@ -133,5 +133,7 @@
 @endif
 
 @if (config('notify.assets.serve', true) && \Illuminate\Support\Facades\Route::has('notify.assets.js'))
-    <script defer src="{{ route('notify.assets.js') }}"></script>
+    {{-- data-navigate-once: wire:navigate re-runs body scripts on every page change, which would boot
+         the runtime again and subscribe to notify:push once more per navigation (one dialog/toast per boot). --}}
+    <script defer src="{{ route('notify.assets.js') }}" data-navigate-once></script>
 @endif
