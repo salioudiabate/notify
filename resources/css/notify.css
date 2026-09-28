@@ -196,6 +196,7 @@
 
 .notify-card__body { display: flex; gap: 12px; padding: 14px 14px 14px 16px; align-items: flex-start; }
 .notify-card__icon { width: 18px; height: 18px; flex: none; margin-top: 1px; }
+.notify-card__icon > svg { display: block; width: 100%; height: 100%; }
 .notify-card__content { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .notify-card__title { font-size: 14px; font-weight: 600; letter-spacing: -.1px; color: var(--notify-text-1); }
 .notify-card__message { font-size: 13px; color: var(--notify-text-2); }
@@ -220,6 +221,7 @@
 
 .notify-progress__head { display: flex; align-items: center; gap: 12px; padding: 18px 18px 0; }
 .notify-progress__icon { width: 36px; height: 36px; border-radius: var(--notify-r-md); background: var(--notify-surface-2); border: 1px solid var(--notify-border); display: flex; align-items: center; justify-content: center; flex: none; color: var(--notify-text-2); }
+.notify-progress__icon > svg { display: block; width: 18px; height: 18px; flex: none; }
 .notify-progress__text { flex: 1 1 0; min-width: 0; }
 .notify-progress__percent { font-size: 13px; font-weight: 600; letter-spacing: -.1px; color: var(--notify-text-1); }
 .notify-progress__bar { height: 6px; border-radius: 3px; background: var(--notify-border); margin: 12px 18px 0; overflow: hidden; }
@@ -273,6 +275,9 @@
 
 .notify-dialog__icon { width: 48px; height: 48px; border-radius: 24px; display: flex; align-items: center; justify-content: center; background: var(--notify-surface-2); border: 1px solid var(--notify-border); color: var(--notify-text-2); }
 .notify-dialog[data-centered="true"] .notify-dialog__icon { width: 56px; height: 56px; border-radius: 28px; }
+/* The glyph is sized explicitly: an <svg> with only a viewBox would otherwise stretch to fill the whole badge. */
+.notify-dialog__icon > svg { display: block; width: 24px; height: 24px; flex: none; }
+.notify-dialog[data-centered="true"] .notify-dialog__icon > svg { width: 28px; height: 28px; }
 .notify-dialog__icon[data-variant="error"]   { background: var(--notify-error-bg);   border-color: var(--notify-error-border);   color: var(--notify-error); }
 .notify-dialog__icon[data-variant="warning"] { background: var(--notify-warning-bg); border-color: var(--notify-warning-border); color: var(--notify-warning); }
 .notify-dialog__icon[data-variant="info"]    { background: var(--notify-info-bg);    border-color: var(--notify-info-border);    color: var(--notify-info); }
