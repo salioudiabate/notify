@@ -8,6 +8,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) — 
 
 Nothing yet.
 
+## [1.0.3] - 2026-09-28
+
+### Fixed
+
+- A forced `color_scheme` (e.g. `light`) survives `wire:navigate`: the page swap reset the `<html>` attributes, `data-notify-theme` included, and the runtime (loaded once since 1.0.1) never set it again, so on a dark OS notifications turned dark after the first navigation. It is now re-applied on `livewire:navigated` (and `turbo:load`).
+
 ## [1.0.2] - 2026-09-28
 
 ### Fixed
@@ -54,7 +60,8 @@ Initial release.
 - `CallbackAction::resolve()`'s single-use guarantee is now enforced by an atomic lock (`config('notify.actions.lock_wait')`) — `get()` + `forget()` alone weren't atomic, so two near-simultaneous requests for the same signed token could both read the closure before either deleted it.
 - Documented prominently (docblocks, config comments, README) that a signed callback URL alone doesn't authenticate anyone — a `Closure` performing a sensitive or destructive action should re-check authorization itself when it runs.
 
-[Unreleased]: https://github.com/salioudiabate/notify/compare/v1.0.2...HEAD
+[Unreleased]: https://github.com/salioudiabate/notify/compare/v1.0.3...HEAD
+[1.0.3]: https://github.com/salioudiabate/notify/compare/v1.0.2...v1.0.3
 [1.0.2]: https://github.com/salioudiabate/notify/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/salioudiabate/notify/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/salioudiabate/notify/releases/tag/v1.0.0

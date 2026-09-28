@@ -38,6 +38,16 @@ describe('color scheme', () => {
     expect(document.documentElement.getAttribute('data-notify-theme')).toBe('light');
   });
 
+  it('re-applies the forced scheme after a wire:navigate page swap resets <html> attributes', () => {
+    loadNotify({ config: { colorScheme: 'light' } });
+
+    // What Livewire's navigate does to the <html> element on the next page.
+    document.documentElement.removeAttribute('data-notify-theme');
+    document.dispatchEvent(new Event('livewire:navigated'));
+
+    expect(document.documentElement.getAttribute('data-notify-theme')).toBe('light');
+  });
+
   it('rejects an invalid scheme instead of silently doing nothing', () => {
     expect(() => Notify.setColorScheme('blue')).toThrow();
   });

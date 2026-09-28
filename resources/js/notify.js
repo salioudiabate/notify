@@ -877,6 +877,12 @@
 
   function boot() {
     initColorScheme();
+
+    // The runtime boots once (data-navigate-once), but a wire:navigate / Turbo page swap
+    // can reset the <html> attributes — data-notify-theme with them, which sent a forced
+    // light scheme back to the OS preference (dark) after the first navigation.
+    document.addEventListener('livewire:navigated', initColorScheme);
+    document.addEventListener('turbo:load', initColorScheme);
     applyButtonColors(CFG.buttonColors);
 
     (window.__NOTIFY_QUEUE__ || []).forEach(ingest);
